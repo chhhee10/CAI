@@ -12,6 +12,21 @@ export default function MemoryCard({ memory, onDelete }) {
   const confidence = isVerified ? 95 : 72;
   const isStale = memory.key.includes("ay2122") || memory.key.includes("ay2223"); // Mock stale flag
 
+  const keyParts = memory.key.split(':');
+  const category = keyParts.length > 2 ? keyParts[2] : "unknown";
+  
+  const categoryColors = {
+    tax_history: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+    deductions: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+    income: "bg-purple-500/10 text-purple-400 border-purple-500/20",
+    notices: "bg-red-500/10 text-red-400 border-red-500/20",
+    preferences: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+    fact: "bg-slate-500/10 text-slate-400 border-slate-500/20"
+  };
+  
+  const badgeClass = categoryColors[category] || categoryColors.fact;
+  const displayCategory = category.replace(/_/g, ' ').toUpperCase();
+
   return (
     <motion.div 
       initial={{ opacity: 0, scale: 0.95 }}
@@ -19,9 +34,14 @@ export default function MemoryCard({ memory, onDelete }) {
       className="bg-slate-800/40 border border-slate-700 hover:border-slate-600 rounded-xl p-5 relative group transition-all"
     >
       <div className="flex justify-between items-start mb-4 gap-3">
-        <h4 className="text-indigo-300 font-mono text-xs break-words whitespace-pre-wrap bg-slate-900/50 px-2.5 py-1.5 rounded-lg border border-slate-800/50 flex-1">
-          {memory.key}
-        </h4>
+        <div className="flex items-center gap-3">
+          <span className={clsx("px-2.5 py-1 text-[10px] font-bold tracking-wider rounded border", badgeClass)}>
+            {displayCategory}
+          </span>
+          <span className="text-[10px] text-slate-500 font-mono">
+             ID: {keyParts[keyParts.length - 1]}
+          </span>
+        </div>
         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
           <button className="p-1.5 text-slate-400 hover:text-white bg-slate-700 rounded-lg hover:bg-slate-600 transition-colors">
             <Edit2 size={14} />
