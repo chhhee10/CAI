@@ -16,23 +16,17 @@ CLIENTS = [
         "name": "Ramesh Iyer",
         "pan": "ABCRI1234D",
         "data": [
-            # Tax history — 3 years
-            (tax_history("abcri1234d", "ay2122"), {"gross": 1520000, "employer": "infosys", "tax_paid": 240000, "refund": 8000, "verified": "form16"}),
-            (tax_history("abcri1234d", "ay2223"), {"gross": 1680000, "employer": "infosys", "tax_paid": 285000, "refund": 11000, "verified": "form16"}),
-            (tax_history("abcri1234d", "ay2324"), {"gross": 1840000, "employer": "infosys", "tax_paid": 320000, "refund": 12000, "verified": "form16"}),
-            # Income
-            (income("abcri1234d", "salary", "ay2324"), {"amount": 1840000, "employer": "infosys"}),
-            (income("abcri1234d", "house_property", "ay2425"), {"flat": "whitefield", "emi": 38000, "purchased": "2025-03"}),
-            # Deductions
-            (deduction("abcri1234d", "80c", "ay2324"), {"amount": 150000, "instrument": "sbi_life", "maxed": True}),
-            (deduction("abcri1234d", "80d", "ay2324"), {"amount": 25000, "instrument": "health_insurance"}),
-            # Notices
-            (notice("abcri1234d", "n001"), {"date": "2024-11-15", "type": "143(1)", "ay": "2024-25", "status": "open", "deadline": "2025-06-18"}),
-            # Preferences
-            (preference("abcri1234d", "regime"), {"regime": "old", "reason": "home_loan_benefit"}),
-            (preference("abcri1234d", "risk"), {"risk": "low", "comm_style": "formal"}),
-            # Monthly cash baseline for anomaly detection
-            (income("abcri1234d", "monthly_cash_avg", "ay2324"), {"avg_monthly_deposit": 80000, "months_sampled": 12}),
+            (tax_history("abcri1234d", "ay2122"), {"fact": "July 2022: Received Form 16 from Infosys. Gross salary was ₹15,20,000 with ₹2,40,000 paid in TDS. Received a tax refund of ₹8,000."}),
+            (tax_history("abcri1234d", "ay2223"), {"fact": "July 2023: Received Form 16 from Infosys. Gross salary increased to ₹16,80,000 with ₹2,85,000 paid in TDS. Received a tax refund of ₹11,000."}),
+            (tax_history("abcri1234d", "ay2324"), {"fact": "July 2024: Received Form 16 from Infosys. Gross salary was ₹18,40,000 with ₹3,20,000 paid in TDS. Received a tax refund of ₹12,000."}),
+            (income("abcri1234d", "salary", "ay2324"), {"fact": "Currently employed at Infosys with a stable annual compensation of ₹18,40,000."}),
+            (income("abcri1234d", "house_property", "ay2425"), {"fact": "March 2025: Purchased a new 2BHK flat in Whitefield, Bangalore. Started paying a home loan EMI of ₹38,000 per month."}),
+            (deduction("abcri1234d", "80c", "ay2324"), {"fact": "May 2024: Maxed out the Section 80C limit by investing ₹1,50,000 into an SBI Life Insurance policy."}),
+            (deduction("abcri1234d", "80d", "ay2324"), {"fact": "August 2024: Purchased a family health insurance policy, claiming a ₹25,000 deduction under Section 80D."}),
+            (notice("abcri1234d", "n001"), {"fact": "November 2024: Received an open 143(1) intimation notice for Assessment Year 2024-25. The deadline to respond is June 18, 2025."}),
+            (preference("abcri1234d", "regime"), {"fact": "April 2025: Switched to the Old Tax Regime to maximize Section 24(b) deductions on the new home loan."}),
+            (preference("abcri1234d", "risk"), {"fact": "Client profile indicates a low risk tolerance and a preference for formal communication regarding financial matters."}),
+            (income("abcri1234d", "monthly_cash_avg", "ay2324"), {"fact": "Maintains an average monthly bank deposit of ₹80,000 based on a 12-month sample."}),
         ]
     },
     {
@@ -40,10 +34,10 @@ CLIENTS = [
         "name": "Priya Sharma",
         "pan": "BCDPS5678E",
         "data": [
-            (tax_history("bcdps5678e", "ay2223"), {"gross": 980000, "employer": "tcs", "tax_paid": 95000, "refund": 3000, "verified": "form16"}),
-            (tax_history("bcdps5678e", "ay2324"), {"gross": 1120000, "employer": "tcs", "tax_paid": 130000, "refund": 5000, "verified": "form16"}),
-            (deduction("bcdps5678e", "80c", "ay2324"), {"amount": 120000, "instrument": "ppf", "maxed": False}),
-            (preference("bcdps5678e", "regime"), {"regime": "new", "reason": "simpler_filing"}),
+            (tax_history("bcdps5678e", "ay2223"), {"fact": "July 2023: Received Form 16 from TCS. Gross salary was ₹9,80,000. Paid ₹95,000 in taxes with a ₹3,000 refund."}),
+            (tax_history("bcdps5678e", "ay2324"), {"fact": "July 2024: Received Form 16 from TCS. Gross salary grew to ₹1,12,000. Paid ₹1,30,000 in taxes with a ₹5,000 refund."}),
+            (deduction("bcdps5678e", "80c", "ay2324"), {"fact": "March 2024: Invested ₹1,20,000 into a PPF account. Did not fully max out the Section 80C limit."}),
+            (preference("bcdps5678e", "regime"), {"fact": "Consistently prefers the New Tax Regime due to simpler filing and lack of major investments."}),
         ]
     },
     {
@@ -51,11 +45,10 @@ CLIENTS = [
         "name": "MK Traders",
         "pan": "CDEMK9012F",
         "data": [
-            (tax_history("cdemk9012f", "ay2324"), {"turnover": 4500000, "profit": 380000, "gst_filed": True, "advance_tax_paid": 85000}),
-            (notice("cdemk9012f", "n001"), {"date": "2025-01-10", "type": "GST_scrutiny", "ay": "2024-25", "status": "open", "deadline": "2025-07-10"}),
+            (tax_history("cdemk9012f", "ay2324"), {"fact": "March 2024: GST filed successfully. Total business turnover was ₹45,00,000 with a net profit of ₹3,80,000. Paid ₹85,000 in advance tax."}),
+            (notice("cdemk9012f", "n001"), {"fact": "January 2025: Received a GST scrutiny notice. Case is currently open with a deadline of July 10, 2025."}),
         ]
     },
-    # New client — zero history — for before/after demo
     {
         "id": "newclient000",
         "name": "New Client",
@@ -66,8 +59,8 @@ CLIENTS = [
 
 # Cross-client pattern
 CROSS_CLIENT = [
-    (cross_client_pattern("regime_15l_25l_homeloan"), {"bracket": "15L-25L", "home_loan": True, "old_regime_pct": 83, "sample_size": 47}),
-    (cross_client_pattern("advance_tax_miss_rate"), {"missed_q1_pct": 34, "bracket": "10L-20L", "sample_size": 89}),
+    (cross_client_pattern("regime_15l_25l_homeloan"), {"fact": "Cross-client analysis shows that 83% of clients in the ₹15L-₹25L bracket with an active home loan prefer the Old Tax Regime. Sample size: 47 clients."}),
+    (cross_client_pattern("advance_tax_miss_rate"), {"fact": "Anomaly detection indicates a 34% missed advance tax payment rate in Q1 for clients in the ₹10L-₹20L bracket. Sample size: 89 clients."}),
 ]
 
 async def seed():

@@ -24,11 +24,42 @@ export default function MemoryAuditView({ clientId, memoryEntries, setMemoryEntr
   const avgConfidence = memoryEntries.length > 0 ? 
     Math.round(memoryEntries.reduce((acc, e) => acc + (typeof e.value === 'string' && e.value.includes("form16") ? 95 : 72), 0) / memoryEntries.length) : 0;
 
+  const clientSummaries = {
+    "abcri1234d": {
+      name: "Ramesh Iyer",
+      profile: "Salaried IT Professional in the 30% bracket. Low risk tolerance. Focuses on Section 24(b) home loan deductions."
+    },
+    "bcdps5678e": {
+      name: "Priya Sharma",
+      profile: "Salaried professional at TCS. Consistently prefers the New Tax Regime due to simpler filing and lack of major investments."
+    },
+    "cdemk9012f": {
+      name: "MK Traders",
+      profile: "Registered business filing GST. Currently under scrutiny for Assessment Year 2024-25."
+    }
+  };
+  
+  const summary = clientSummaries[clientId] || { name: "New Client", profile: "No data available." };
+
   return (
     <div className="flex-1 h-full bg-slate-950 p-8 overflow-y-auto block">
       <div className="mb-6 shrink-0">
         <h2 className="text-2xl font-bold text-white mb-2">Memory Audit View</h2>
         <p className="text-slate-400">Direct access to the Vectorize Hindsight memory bank for this client.</p>
+      </div>
+
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-6 flex items-start gap-4">
+        <div className="bg-indigo-500/20 text-indigo-400 p-3 rounded-xl border border-indigo-500/30 mt-0.5">
+          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+        </div>
+        <div>
+          <h3 className="text-white font-bold mb-1">Mental Model: {summary.name}</h3>
+          <p className="text-slate-400 text-sm leading-relaxed">
+            {summary.profile}
+          </p>
+        </div>
       </div>
 
       <StatsRow 
