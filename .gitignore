@@ -14,6 +14,13 @@ env/
 # OS
 .DS_Store
 
-# Temporary
+# Temporary & AI generated
 /tmp/
 *.log
+test_*.py
+.cursor/
+.cursorrules
+.gemini/
+*.md
+!README.md
+!frontend/README.md
