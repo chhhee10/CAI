@@ -38,6 +38,7 @@ export default function ChatPanel({ clientId, onUploadComplete, activeView, setA
       setMessages(prev => [...prev, {
         role: 'assistant',
         text: reply,
+        agents: res.routing?.agents || []
       }]);
     } catch {
       setMessages(prev => [...prev, { role: 'assistant', text: "Sorry, I encountered an error communicating with the backend." }]);
@@ -153,6 +154,13 @@ export default function ChatPanel({ clientId, onUploadComplete, activeView, setA
                     boxShadow:     m.role === 'user' ? 'none'  : '0 2px 8px rgba(0,0,0,0.02)',
                   }}>
                     <p style={s.bubbleText}>{m.text}</p>
+                    {m.agents && m.agents.length > 0 && (
+                      <div style={s.agentTagRow}>
+                        {m.agents.map(a => (
+                          <span key={a} style={s.agentTag}>↳ Called: {a}</span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </motion.div>
@@ -347,6 +355,24 @@ const s = {
     borderRadius: '50%',
     background: '#ccc',
     animation: 'bounce-dot 1.2s ease-in-out infinite',
+  },
+  agentTagRow: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '6px',
+    marginTop: '12px',
+    paddingTop: '12px',
+    borderTop: '1px solid rgba(0,0,0,0.05)',
+  },
+  agentTag: {
+    fontSize: '10px',
+    fontWeight: 600,
+    color: '#888',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+    background: '#F4F2E9',
+    padding: '4px 8px',
+    borderRadius: '4px',
   },
   inputArea: {
     padding: '24px',

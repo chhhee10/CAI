@@ -121,20 +121,8 @@ const s = {
   },
 };
 
-export default function ClientSidebar({ selectedClient, onSelectClient }) {
-  const [clients, setClients] = useState([]);
+export default function ClientSidebar({ clients, selectedClient, onSelectClient }) {
 
-  useEffect(() => {
-    async function fetchClients() {
-      try {
-        const data = await api.getClients();
-        setClients(data);
-      } catch (err) {
-        console.error("Failed to fetch clients", err);
-      }
-    }
-    fetchClients();
-  }, []);
 
   return (
     <div style={s.root}>

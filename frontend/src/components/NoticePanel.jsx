@@ -3,7 +3,7 @@ import { api } from '../api/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, History, Clock } from 'lucide-react';
 
-export default function NoticePanel({ clientId }) {
+export default function NoticePanel({ clientId, clientName }) {
   const [notices, setNotices] = useState({ open: [], closed: [] });
 
   useEffect(() => {
@@ -35,12 +35,13 @@ export default function NoticePanel({ clientId }) {
         </div>
         
         <p style={s.noticeDesc}>
-          {val.raw}
+          {val.raw && clientId && clientName 
+            ? val.raw.replace(new RegExp(`Client\\s+${clientId}`, 'gi'), clientName)
+            : val.raw}
         </p>
 
         <div style={s.cardFooter}>
           <span style={s.footerText}>{isClosed ? 'Resolved' : 'Action required'}</span>
-          <button style={s.actionBtn}>{isClosed ? 'View' : 'Open'}</button>
         </div>
       </div>
     );

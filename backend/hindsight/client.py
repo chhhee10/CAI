@@ -67,9 +67,21 @@ async def recall(query: str, namespace: str = "", top_k: int = 5) -> list[dict]:
             for i, r in enumerate(items):
                 text_val = getattr(r, "text", getattr(r, "content", str(r)))
                 
+                actual_fact = text_val
+                
+                # Extract confidence from tags (e.g. conf_95)
+                confidence = 72
+                tags = getattr(r, "tags", [])
+                for t in tags:
+                    if isinstance(t, str) and t.startswith("conf_"):
+                        try:
+                            confidence = int(t.split("_")[1])
+                        except ValueError:
+                            pass
+                
                 # Categorise by content keywords
                 fake_key_type = "fact"
-                text_lower = text_val.lower()
+                text_lower = actual_fact.lower()
                 if "notice" in text_lower or "deadline" in text_lower or "scrutiny" in text_lower or "mismatch" in text_lower:
                     fake_key_type = "notices"
                 elif "deduction" in text_lower or "80c" in text_lower or "80d" in text_lower or "ppf" in text_lower or "nps" in text_lower or "hra" in text_lower:
@@ -82,13 +94,13 @@ async def recall(query: str, namespace: str = "", top_k: int = 5) -> list[dict]:
                     fake_key_type = "tax_history"
 
                 # Extract the most recent AY mentioned in this fact
-                ay_matches = _AY_RE.findall(text_val)
+                ay_matches = _AY_RE.findall(actual_fact)
                 ay_label = ay_matches[-1] if ay_matches else ""
                 ay_sort  = _ay_sort_key(ay_label)
 
                 parsed_results.append({
                     "key": f"{namespace}:{fake_key_type}:{i}",
-                    "value": {"fact": text_val},
+                    "value": {"fact": actual_fact, "confidence": confidence},
                     "ay": ay_label,
                     "ay_sort": ay_sort,
                     "order": i

@@ -8,10 +8,23 @@ import SplashScreen from './components/SplashScreen';
 import { api } from './api/client';
 
 export default function App() {
+  const [clients, setClients]               = useState([]);
   const [selectedClient, setSelectedClient] = useState('abcri1234d');
   const [activeView, setActiveView]         = useState('audit');
   const [memoryEntries, setMemoryEntries]   = useState([]);
   const [showSplash, setShowSplash]         = useState(true);
+
+  useEffect(() => {
+    async function fetchClients() {
+      try {
+        const data = await api.getClients();
+        setClients(data);
+      } catch (err) {
+        console.error("Failed to fetch clients", err);
+      }
+    }
+    fetchClients();
+  }, []);
 
   const loadMemory = async (clientId) => {
     try {
@@ -24,6 +37,9 @@ export default function App() {
 
   useEffect(() => { loadMemory(selectedClient); }, [selectedClient]);
 
+  const activeClientObj = clients.find(c => c.id === selectedClient);
+  const clientName = activeClientObj ? activeClientObj.name : "Unknown Client";
+
   return (
     <>
       <AnimatePresence>
@@ -32,6 +48,7 @@ export default function App() {
       <div style={s.shell}>
       {/* ── Left sidebar ───────────────────────────── */}
       <ClientSidebar
+        clients={clients}
         selectedClient={selectedClient}
         onSelectClient={setSelectedClient}
         activeClientEntriesCount={memoryEntries.length}
@@ -44,12 +61,13 @@ export default function App() {
           <div style={{ display: activeView === 'audit' ? 'flex' : 'none', flex: 1, overflow: 'hidden' }}>
             <MemoryAuditView
               clientId={selectedClient}
+              clientName={clientName}
               memoryEntries={memoryEntries}
               setMemoryEntries={setMemoryEntries}
               activeView={activeView}
               setActiveView={setActiveView}
             />
-            <NoticePanel clientId={selectedClient} />
+            <NoticePanel clientId={selectedClient} clientName={clientName} />
           </div>
 
           <div style={{ display: activeView === 'chat' ? 'flex' : 'none', flex: 1, overflow: 'hidden' }}>

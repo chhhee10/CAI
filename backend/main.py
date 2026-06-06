@@ -54,6 +54,48 @@ async def upload_document(client_id: str, ay: str, file: UploadFile = File(...))
     facts = await ingest_and_store(path, client_id, ay)
     return {"extracted": facts, "stored": True}
 
+@app.get("/clients")
+async def get_clients():
+    import json
+    import os
+    base_clients = []
+    
+    kb_path = os.path.join(os.path.dirname(__file__), "..", "NewKB", "hindsight_kb.json")
+    try:
+        with open(kb_path, "r") as f:
+            kb_data = json.load(f)
+            for c in kb_data.get("clients", []):
+                base_clients.append({
+                    "id": c["id"].lower(),
+                    "name": c["name"],
+                    "pan": c["id"].upper()
+                })
+    except Exception as e:
+        print(f"Error loading NewKB: {e}")
+        # Fallback to empty if it fails
+        pass
+
+    base_clients.append({"id": "newclient000", "name": "New Client", "pan": "ZZZXX0000Z"})
+    
+    for c in base_clients:
+        if c["id"] != "newclient000":
+            results = await recall(
+                "tax income deductions notice preferences regime salary GST advance",
+                namespace=f"client:{c['id']}",
+                top_k=60
+            )
+            c["entries"] = len(results)
+            ays = set()
+            for r in results:
+                if "ay" in r and r["ay"]:
+                    ays.add(r["ay"])
+            c["years"] = len(ays)
+        else:
+            c["entries"] = 0
+            c["years"] = 0
+            
+    return base_clients
+
 @app.get("/notices/{client_id}")
 async def notices(client_id: str):
     return await get_notices(client_id)

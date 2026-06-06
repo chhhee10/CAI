@@ -2,12 +2,27 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Trash2, AlertCircle } from 'lucide-react';
 
-export default function MemoryCard({ memory, onDelete }) {
+export default function MemoryCard({ memory, onDelete, clientName }) {
   const valObj     = typeof memory.value === 'string' ? JSON.parse(memory.value) : memory.value;
   const isVerified = valObj?.verified === "form16";
-  const confidence = isVerified ? 95 : 72;
+  const confidence = valObj?.confidence || (isVerified ? 95 : 72);
   const isStale    = memory.key.includes("ay2122") || memory.key.includes("ay2223");
   const isHighConf = confidence > 90;
+
+  // Attempt to extract the raw client ID string (e.g. abcri1234d) from the memory key
+  const clientIdRaw = memory.key.split(':')[1] || '';
+  
+  // Create a regex to match "Client [ID]" case-insensitively to replace with the actual name
+  const replaceClientRegex = new RegExp(`Client\\s+${clientIdRaw}`, 'gi');
+  
+  // Helper to format values for display
+  const formatValue = (v) => {
+    let str = typeof v === 'object' ? JSON.stringify(v) : String(v);
+    if (clientIdRaw && clientName) {
+      str = str.replace(replaceClientRegex, clientName);
+    }
+    return str;
+  };
 
   return (
     <motion.div
@@ -18,29 +33,24 @@ export default function MemoryCard({ memory, onDelete }) {
       {/* Key */}
       <div style={s.topRow}>
         <span style={s.keyChip}>{memory.key}</span>
-        <button
-          style={s.deleteBtn}
-          onClick={() => onDelete(memory.key)}
-          title="Delete"
-        >
-          <Trash2 size={14} color="#888" />
-        </button>
       </div>
 
       {/* Fields */}
       <div style={s.fields}>
         {typeof valObj === 'object' && valObj !== null
-          ? Object.entries(valObj).map(([k, v]) => (
+          ? Object.entries(valObj)
+              .filter(([k]) => k !== 'confidence')
+              .map(([k, v]) => (
               <div key={k} style={s.field}>
                 <div style={s.fieldKey}>{k.replace(/_/g, ' ')}</div>
                 <div style={s.fieldVal}>
-                  {typeof v === 'object' ? JSON.stringify(v) : String(v)}
+                  {formatValue(v)}
                 </div>
               </div>
             ))
           : (
             <div style={s.field}>
-              <div style={s.fieldVal}>{String(valObj)}</div>
+              <div style={s.fieldVal}>{formatValue(valObj)}</div>
             </div>
           )
         }

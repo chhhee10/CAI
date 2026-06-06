@@ -54,7 +54,8 @@ async def ingest():
 
             key     = f"client:{cid.lower()}:{ns}:{idx}"
             content = f"key: {key} | value: {fact['fact']}"
-            tags    = [cid.lower()]
+            conf    = fact.get("confidence", 72)
+            tags    = [cid.lower(), f"conf_{conf}"]
 
             try:
                 await hindsight.aretain(

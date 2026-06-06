@@ -6,7 +6,7 @@ import { Database, Sparkles, Box, Activity, ShieldAlert, Clock } from 'lucide-re
 
 const TABS = ["All", "Tax History", "Deductions", "Income", "Preferences", "Notices"];
 
-export default function MemoryAuditView({ clientId, memoryEntries, setMemoryEntries, activeView, setActiveView }) {
+export default function MemoryAuditView({ clientId, clientName, memoryEntries, setMemoryEntries, activeView, setActiveView }) {
   const [activeTab, setActiveTab] = useState("All");
 
   const handleDelete = async (key) => {
@@ -17,6 +17,23 @@ export default function MemoryAuditView({ clientId, memoryEntries, setMemoryEntr
   const filteredEntries = memoryEntries.filter(entry => {
     if (activeTab === "All") return true;
     return entry.key.includes(activeTab.toLowerCase().replace(" ", "_"));
+  }).sort((a, b) => {
+    const aSort = a.ay_sort || 0;
+    const bSort = b.ay_sort || 0;
+    return bSort - aSort;
+  });
+
+  const groupedEntries = {};
+  filteredEntries.forEach(entry => {
+    const ayGroup = entry.ay && entry.ay !== "—" ? `AY ${entry.ay}` : 'General / Ongoing';
+    if (!groupedEntries[ayGroup]) groupedEntries[ayGroup] = [];
+    groupedEntries[ayGroup].push(entry);
+  });
+
+  const groupKeys = Object.keys(groupedEntries).sort((a, b) => {
+    if (a === 'General / Ongoing') return 1;
+    if (b === 'General / Ongoing') return -1;
+    return b.localeCompare(a);
   });
 
   // Dynamically calculate stats
@@ -118,12 +135,19 @@ export default function MemoryAuditView({ clientId, memoryEntries, setMemoryEntr
       {/* Content Area */}
       <div style={s.contentArea}>
         {filteredEntries.length > 0 ? (
-          <div style={s.cardsGrid}>
-            <AnimatePresence>
-              {filteredEntries.map((entry) => (
-                <MemoryCard key={entry.key} memory={entry} onDelete={handleDelete} />
-              ))}
-            </AnimatePresence>
+          <div style={s.groupedArea}>
+            {groupKeys.map(group => (
+              <div key={group} style={s.ayGroupSection}>
+                <h3 style={s.ayGroupHeader}>{group}</h3>
+                <div style={s.cardsGrid}>
+                  <AnimatePresence>
+                    {groupedEntries[group].map((entry) => (
+                      <MemoryCard key={entry.key} memory={entry} onDelete={handleDelete} clientName={clientName} />
+                    ))}
+                  </AnimatePresence>
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           <div style={s.emptyStateBox}>
@@ -300,6 +324,26 @@ const s = {
   },
   contentArea: {
     paddingBottom: '32px',
+  },
+  groupedArea: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '32px',
+  },
+  ayGroupSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px',
+  },
+  ayGroupHeader: {
+    fontSize: '14px',
+    fontWeight: 700,
+    color: '#888',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+    margin: 0,
+    paddingBottom: '8px',
+    borderBottom: '1px solid #E5E5E5',
   },
   cardsGrid: {
     display: 'grid',
