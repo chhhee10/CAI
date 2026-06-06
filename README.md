@@ -1,5 +1,5 @@
 # CAI — Chartered Accountant Intelligence
-### Persistent, Memory-First Multi-Agent System
+### Persistent, Memory-First Multi-Agent Tax Advisory Operating System
 
 ![CAI Dashboard Interface](https://raw.githubusercontent.com/Vijeta-Patel/CAI/main/frontend/img/dasboard.png)
 
@@ -109,55 +109,72 @@ CAI does not rely on a single LLM prompt. Instead, it coordinates six specialize
 
 ### 1. Orchestrator Agent
 * **File:** [orchestrator.py](file:///home/vijeta/CAI/backend/agents/orchestrator.py)
-* **Model:** `llama-3.3-70b-versatile`
-* **Purpose:** Acts as the routing brain. It analyzes the user's query against a 500-character snapshot of the client's mental model and outputs a strict XML schema defining:
-  - `intent`: (`tax_query`, `notice`, `anomaly`, `advisory`, `yoy`, `document`, `general`)
-  - `agents`: list of downstream agents to trigger.
-  - `urgency`: (`high`, `normal`, `low`)
-  - `context_needed`: specific Hindsight namespaces to fetch (e.g., `['tax_history', 'income']`).
+* **Model:** `llama-3.3-70b-versatile` (Temperature: 0)
+* **Purpose:** Functions as the primary semantic router and DAG entry point. It receives the user's raw query alongside a 500-character snapshot of the client's mental model retrieved from Hindsight. 
+* **Execution details:** Using a zero-temperature generation parameter for strict deterministic routing, it outputs a strict XML schema. The output schema enforces the extraction of:
+  - `<intent>`: Categorized strict union types (`tax_query`, `notice`, `anomaly`, `advisory`, `yoy`, `document`, `general`).
+  - `<agents>`: A dynamically generated comma-separated list of downstream agents to trigger in parallel or sequence (e.g., `memory,advisory`).
+  - `<urgency>`: A classifier (`high`, `normal`, `low`) used to prioritize background job queues.
+  - `<context_needed>`: Specific semantic namespaces required for the query (e.g., `tax_history,notices,deductions,income,preferences`).
 
 ### 2. Advisory Agent
 * **File:** [advisory.py](file:///home/vijeta/CAI/backend/agents/advisory.py)
-* **Model:** `llama-3.3-70b-versatile`
-* **Purpose:** Synthesizes final answers. It receives the query, the context retrieved from Hindsight, and tax compliance regulations. It operates under strict guardrails to prevent hallucination and highlights warning indicators if memory facts are older than 9 months.
+* **Model:** `llama-3.3-70b-versatile` (Temperature: 0.2)
+* **Purpose:** The core synthesis engine for final response generation. 
+* **Execution details:** It operates under strict zero-hallucination guardrails. The prompt is injected with the `memory_context` (retrieved from Hindsight), `doc_context` (extracted during the current session), and `tax_rules`. The agent is explicitly instructed to decline generating tax figures if the context arrays are empty. It outputs:
+  - A direct, grounded answer.
+  - Year-specific advice isolated by the assessment year strings (e.g., AY2024-25).
+  - Anomaly flags and a confidence degradation warning if vector timestamps indicate the memory fact is over 9 months old.
 
 ![CAI Multi-Agent Chat Panel](https://raw.githubusercontent.com/Vijeta-Patel/CAI/main/frontend/img/chat.png)
 
 ### 3. Document Extraction Agent
 * **File:** [document.py](file:///home/vijeta/CAI/backend/agents/document.py)
-* **Purpose:** Parses uploaded Form 16 PDFs. It uses PyMuPDF to extract text, locates gross salary, PAN, and TDS amounts, and automatically calls Hindsight's `retain` function to write these newly discovered facts into the client's vector space.
+* **Purpose:** Handles deterministic and heuristic parsing of uploaded compliance documents.
+* **Execution details:** Utilizes `PyMuPDF` (fitz) to convert PDF binaries into raw text streams. It applies pre-compiled regular expressions (`re.search(r"Gross Salary[^\d]*([\d,]+)", text)`) to identify financial entities like Gross Salary, Total Tax Deducted (TDS), and PAN. Upon successful extraction, it asynchronously triggers the Hindsight `retain()` SDK method, embedding the new facts directly into the client's persistent vector space under the `tax_history` and `income` namespaces.
 
 ### 4. Notice Agent
 * **File:** [notice.py](file:///home/vijeta/CAI/backend/agents/notice.py)
-* **Purpose:** Retrieves entries in the `notices` namespace, calculates the number of days left before compliance deadlines, and tags notices as `high`, `normal`, or `low` urgency based on the remaining timeline.
+* **Purpose:** A deterministic procedural agent that manages compliance deadlines and government scrutiny tracking.
+* **Execution details:** It invokes `arecall()` on the `notices` namespace. Using pre-defined regex heuristics (e.g., `Section 143(1)`, `Section 148`), it parses human-readable notice strings into structured `datetime` objects. It computes the `days_left` delta against `date.today()`. Notices are then mutated into a structured JSON dictionary sorted algorithmically by urgency (`high` for <=14 days, `normal` for <=30 days, `low` otherwise) and segregated into `open` and `closed` queues.
 
 ### 5. YoY (Year-over-Year) Agent
 * **File:** [yoy.py](file:///home/vijeta/CAI/backend/agents/yoy.py)
-* **Purpose:** Compares the financial records of a client across two assessment years. It calculates the delta in gross income, total tax paid, and refunds, and returns a structured comparison model.
+* **Purpose:** Computes financial deltas across different assessment years.
+* **Execution details:** Triggers dual `recall()` requests on the `tax_history` namespace targeting specific Assessment Years (e.g., AY2023-24 vs AY2024-25). It parses the returned JSON blobs to extract gross income, tax paid, and refunds, returning a unified delta dictionary (`{"gross_delta": 50000, "tax_delta": 5000}`) that is fed into the Advisory Agent for trend summarization.
 
 ### 6. Anomaly Agent
 * **File:** [anomaly.py](file:///home/vijeta/CAI/backend/agents/anomaly.py)
 * **Model:** `qwen/qwen3-32b`
-* **Purpose:** Compares incoming financial records or transaction logs against the client's historical baseline stored in memory. It flags significant deviations (e.g., unexpected cash deposits) with severity alerts (`high`/`medium`/`low`).
+* **Purpose:** Acts as a specialized financial divergence detector.
+* **Execution details:** It compares incoming structured data streams (like new bank statements or Tally exports) against a historical baseline fetched from memory. It is instructed to flag transactions that deviate from the established norm, outputting a strict pattern: `FLAG: <description> | SEVERITY: <level>`. If no deviation is detected, it outputs a strict `CLEAR` signal, terminating the anomaly pipeline branch early to save tokens.
 
 ---
 
 ## 6. Data Flow & Execution Sequences
 
-### Query Ingestion Flow
-1. **Request Ingested**: The `/query` endpoint receives the request.
-2. **Mental Model Lookup**: The backend reads the client summary from Hindsight's metadata layer to provide quick context.
-3. **Intent Classification**: The Orchestrator parses the query and returns the required memory namespaces.
-4. **Targeted Retrieval**: Asynchronous `arecall()` operations query only the required namespaces (e.g. `client:abcri1234d:tax_history`).
-5. **Synthesis**: Recalled facts are joined into a formatted string and sent to the Advisory Agent.
-6. **Delivery**: The response is streamed back to the frontend with details on which agents were executed and the exact memory entries used.
+### Phase 1: Query Ingestion & Semantic Routing
+1. **HTTP Ingestion**: The FastAPI `/query` endpoint receives a JSON payload containing the `client_id` and the raw natural language `query`.
+2. **Mental Model Lookup**: The backend executes an asynchronous `mental_model_retrieve(client_id)` call to the Hindsight API, fetching a 500-character synthetic baseline of the client to provide zero-shot context.
+3. **Intent Classification**: The `Orchestrator Agent` evaluates the query alongside the mental model. It generates a rigid XML routing schema, specifying the exact downstream agents required (e.g., `[memory, advisory]`) and the semantic namespaces needed (e.g., `['tax_history', 'income']`).
 
-### Document Upload & Memory Retention Flow
-1. **Upload Trigger**: The CA uploads a Form 16 PDF through the Advisory Agent panel.
-2. **Local Processing**: The file is stored temporarily and parsed.
-3. **Fact Extraction**: Gross Salary, PAN, and TDS are extracted.
-4. **Hindsight Retention**: The backend calls `aretain()` to write the extracted facts into `client:{id}:tax_history` and `client:{id}:income` vector spaces.
-5. **UI Refresh**: The frontend receives a success confirmation and triggers a silent state refresh to reload the updated memory audit list.
+### Phase 2: Targeted Vector Retrieval
+4. **Namespace Filtering**: The system parses the Orchestrator's `context_needed` array.
+5. **Asynchronous Recall**: For each required namespace, an `arecall(query, namespace=client:{id}:{namespace}, top_k=5)` request is fired concurrently.
+6. **Confidence & Tag Processing**: The retrieved facts are mapped. The system parses Hindsight's `tags` (e.g., `conf_95`) to determine fact reliability and uses regex to map the fact to a specific Assessment Year (`AY_RE`).
+
+### Phase 3: Synthesis & Delivery
+7. **Agent Handoff**: The retrieved vector context is joined into a formatted string and injected into the `Advisory Agent`'s prompt, alongside any temporary session documents.
+8. **LLM Generation**: The Advisory Agent synthesizes the grounded response, strictly adhering to the provided memory bounds.
+9. **Streaming Delivery**: The generated text, along with metadata (tokens used, latency, routing path, specific memory keys referenced), is returned to the React frontend where it is rendered with micro-animations.
+
+### Phase 4: Document Upload & Memory Retention Flow
+1. **Binary Upload**: The CA drags a Form 16 PDF into the Advisory Agent panel. The file is uploaded via `multipart/form-data`.
+2. **Local Parsing Pipeline**: The file is temporarily written to disk. The `Document Extraction Agent` initializes `PyMuPDF` to strip the text layer.
+3. **Regex Entity Extraction**: The parser applies compliance-specific regex patterns to isolate the `gross`, `tds`, and `pan` entities from the noise.
+4. **Hindsight Retention Generation**: The system constructs a natural language fact string (e.g., *"Form 16 uploaded. Gross salary verified at ₹1,500,000"*).
+5. **Vector Embedding**: The backend calls `aretain()` to write this new string into the Hindsight database under the `client:{id}:tax_history` tag. Vectorize automatically computes the embeddings and indexes the fact.
+6. **State Synchronization**: The frontend receives a `200 OK` response. It triggers a silent state refresh, performing a new `GET` request to reload the Memory Audit list, causing the UI to seamlessly display the newly ingrained memory.
 
 ---
 
@@ -184,19 +201,32 @@ CAI utilizes **LangSmith** for full execution tracing. CAs and developers can in
 
 ![Vectorize Hindsight Metadata Visualizer](https://raw.githubusercontent.com/Vijeta-Patel/CAI/main/frontend/img/hindsight2.png)
 
-Client data is organized hierarchically inside Vectorize Hindsight using specific namespaces:
+CAI leverages **Vectorize Hindsight** as its core persistent memory layer. Data is embedded as high-dimensional vectors and isolated using strict hierarchical namespace routing to ensure client data is never cross-contaminated.
 
-### Key Pattern Schema
-* **Client Fact Keys**: `client:{client_id}:{namespace}:{record_id}`
-* **Cross-Client Patterns**: `cross_client:patterns:{pattern_key}`
+### Key Pattern Schema & Payload Structure
+Data written to Hindsight is structured as a serialized JSON string representing a fact dictionary.
+* **Payload Serialization**: `content = json.dumps({"key": key, "value": {"fact": fact_str}})`
+* **Vector Indexing Tags**: Metadata tags (e.g., `["abcri1234d", "conf_95"]`) are attached for strict `tags_match="all_strict"` filtering during retrieval.
+* **Client Fact Keys**: Mapped syntactically as `client:{client_id}:{namespace}:{record_id}`.
 
-### Supported Namespaces
-* `tax_history`: Gross income, total tax paid, refunds, and filing regimes for previous assessment years.
+### Embedded Semantic Namespaces
+When calling `hindsight.arecall()`, CAI restricts the embedding search space to specific logical silos:
+* `tax_history`: Gross income vectors, total tax paid, refunds, and filing regimes (tracked via `AY_RE` matching).
 * `income`: Current employment sources, salary details, business turnovers, and asset-based income.
-* `deductions`: 80C, 80D, standard, and custom deductions claimed by the client.
-* `notices`: Scrutiny intimations, tax demands, GST notices, and corresponding deadlines.
-* `preferences`: Client communication channels, preferred filing regime rules, and risk tolerance thresholds.
+* `deductions`: NLP-parsed declarations of 80C, 80D, standard, and custom deductions.
+* `notices`: Raw strings representing scrutiny intimations, tax demands, and GST notices. These are post-processed by the Notice Agent into temporal deadlines.
+* `preferences`: Client communication channels and dynamic risk tolerance thresholds.
 
+### Seeded Demo Clients
+CAI comes pre-seeded with synthetic, high-fidelity compliance records:
+
+| Client Name | Client ID | PAN | Assessment History | Core Features in Seed |
+| :--- | :--- | :--- | :---: | :--- |
+| **Ramesh Iyer** | `abcri1234d` | `ABCRI1234D` | 3 Years | Home loan eligibility, 143(1) Intimation notice, Old Tax Regime preference. |
+| **Priya Sharma** | `bcdps5678e` | `BCDPS5678E` | 2 Years | Freelance content writing income, PPF investments, New Tax Regime preference. |
+| **MK Traders** | `cdemk9012f` | `CDEMK9012F` | 1 Year | Sole proprietorship, GSTIN tracking, GSTR notice, anomalous cash deposits. |
+| **Suresh Karthik** | `dghsk3456g` | `DGHSK3456G` | 2 Years | Software engineer, RSU vesting, Capital Gains (LTCG) on stock sale. |
+| **Nalini Anand** | `efgna7890h` | `EFGNA7890H` | 3 Years | Self-employed gynaecologist, Presumptive taxation 44ADA, HDFC fixed deposit. |
 
 ---
 
@@ -277,15 +307,12 @@ All Groq API transactions are governed by a robust retry handler (`groq_call_wit
 
 To evaluate the capabilities of CAI, run the following interactive demo flow:
 
-1. **Brutalist Landing Page & Animations**: Open the app at `http://localhost:5173`. Check the staggered entrance animations, scroll through the staggered "How it Works" cards, and inspect the hover animations.
-2. **Interactive Search Input**: In the hero search bar, type `Any GST mismatches?` and press **Enter**.
-3. **Splash Screen & State Transition**: Watch the splash screen load, collapse, and open the dashboard. The application automatically redirects you to the **Advisory Agent (Chat)** view and runs the query.
-4. **Inspect Multi-Agent Routing**: Observe the chat response. Below the agent response bubble, look at the tags labeled `↳ Called: orchestrator` and `↳ Called: memory`. This shows the multi-agent routing path.
-5. **Memory Audit View**: Click on the **Memory Audit** tab. Filter by `Notices` or `Tax History` to inspect Ramesh Iyer's pre-seeded memories, complete with confidence scores and Assessment Years.
-6. **Form 16 Ingestion**: Switch to the **Advisory Agent** view. Click the **Upload** button and select a sample Form 16 PDF. The Document Agent will parse the PDF, extract the financial details, and write the facts to Hindsight.
-7. **Verify Persistent Memory Sync**: Go back to the **Memory Audit** view. Verify that the newly parsed facts from the Form 16 (for AY 2024-25) are now loaded in the client's database profile.
-8. **Browser Back Navigation**: Click the browser's back button. The app transitions back to the brutalist landing page, preserving the history state.
-
+1. **Landing Page & Animations**: Open the app at `http://localhost:5173`. Check the staggered entrance animations, scroll through the staggered "How it Works" cards, and inspect the hover animations.
+2. **Splash Screen & State Transition**: Watch the splash screen load, collapse, and open the dashboard. The application automatically redirects you to the **Advisory Agent (Chat)** view and runs the query.
+3. **Inspect Multi-Agent Routing**: Observe the chat response. Below the agent response bubble, look at the tags labeled `↳ Called: orchestrator` and `↳ Called: memory`. This shows the multi-agent routing path.
+4. **Memory Audit View**: Click on the **Memory Audit** tab. Filter by `Notices` or `Tax History` to inspect Ramesh Iyer's pre-seeded memories, complete with confidence scores and Assessment Years.
+5. **Form 16 Ingestion**: Switch to the **Advisory Agent** view. Click the **Upload** button and select a sample Form 16 PDF. The Document Agent will parse the PDF, extract the financial details, and write the facts to Hindsight.
+6. **Verify Persistent Memory Sync**: Go back to the **Memory Audit** view. Verify that the newly parsed facts from the Form 16 (for AY 2024-25) are now loaded in the client's database profile.
 ---
 
 ## 12. Project Structure
