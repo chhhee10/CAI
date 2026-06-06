@@ -1,5 +1,5 @@
 # CAI — Chartered Accountant Intelligence
-### Persistent, Memory-First Multi-Agent Tax Advisory Operating System
+### Persistent, Memory-First Multi-Agent System
 
 ![CAI Dashboard Interface](https://raw.githubusercontent.com/Vijeta-Patel/CAI/main/frontend/img/dasboard.png)
 
