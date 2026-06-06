@@ -17,6 +17,10 @@ export const api = {
         const res = await fetch(`${BASE_URL}/memory/${clientId}?t=${Date.now()}`);
         return res.json();
     },
+    async getBrief(clientId) {
+        const res = await fetch(`${BASE_URL}/brief/${clientId}?t=${Date.now()}`);
+        return res.json();
+    },
     async getNotices(clientId) {
         const res = await fetch(`${BASE_URL}/notices/${clientId}`);
         return res.json();
