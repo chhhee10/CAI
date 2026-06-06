@@ -1,238 +1,328 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import MemoryCard from './MemoryCard';
-import StatsRow from './StatsRow';
 import { api } from '../api/client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowUpDown, ArrowDownUp, LayoutGrid, List } from 'lucide-react';
+import { Database, Sparkles, Box, Activity, ShieldAlert, Clock } from 'lucide-react';
 
 const TABS = ["All", "Tax History", "Deductions", "Income", "Preferences", "Notices"];
 
-const clientSummaries = {
-  "abcri1234d": {
-    name: "Ramesh Iyer",
-    profile: "Salaried IT professional at Infosys in the 30% bracket. Conservative investor. Active home loan (Mar 2025). Old Tax Regime preferred.",
-    historyYears: 3,
-  },
-  "bcdps5678e": {
-    name: "Priya Sharma",
-    profile: "Salaried professional at Wipro. Freelance content writing on the side. New Tax Regime since AY2023-24. Form 16 pending.",
-    historyYears: 2,
-  },
-  "cdemk9012f": {
-    name: "MK Traders",
-    profile: "Sole proprietorship trading firm. GST registered. Presumptive taxation under Sec 44AD. Active notice pending.",
-    historyYears: 1,
-  },
-  "dghsk3456g": {
-    name: "Suresh Karthik",
-    profile: "Senior software engineer at TCS. Switched to New Tax Regime for AY2024-25 (₹28K savings). Has LTCG & rental income.",
-    historyYears: 2,
-  },
-  "efgna7890h": {
-    name: "Nalini Anand",
-    profile: "Self-employed gynaecologist. Presumptive Sec 44ADA (below ₹50L). Expecting to cross threshold in FY2025-26.",
-    historyYears: 3,
-  },
-};
-
-export default function MemoryAuditView({ clientId, memoryEntries, setMemoryEntries }) {
-  const [activeTab, setActiveTab]   = useState("All");
-  const [sortOrder, setSortOrder]   = useState("newest"); // "newest" | "oldest"
-  const [viewMode, setViewMode]     = useState("timeline"); // "timeline" | "grid"
+export default function MemoryAuditView({ clientId, memoryEntries, setMemoryEntries, activeView, setActiveView }) {
+  const [activeTab, setActiveTab] = useState("All");
 
   const handleDelete = async (key) => {
     await api.deleteMemory(key);
     setMemoryEntries(prev => prev.filter(e => e.key !== key));
   };
 
-  // Filter by tab
-  const tabFiltered = useMemo(() => {
-    if (activeTab === "All") return memoryEntries;
-    const tabKey = activeTab.toLowerCase().replace(" ", "_");
-    return memoryEntries.filter(e => e.key.includes(tabKey));
-  }, [memoryEntries, activeTab]);
-
-  // Sort by AY (using ay_sort field from backend) then by order index as tiebreaker
-  const sortedEntries = useMemo(() => {
-    return [...tabFiltered].sort((a, b) => {
-      const aAY = a.ay_sort ?? 0;
-      const bAY = b.ay_sort ?? 0;
-      if (aAY !== bAY) {
-        return sortOrder === "newest" ? bAY - aAY : aAY - bAY;
-      }
-      // Tiebreak: use original recall order
-      return sortOrder === "newest"
-        ? (b.order ?? 0) - (a.order ?? 0)
-        : (a.order ?? 0) - (b.order ?? 0);
-    });
-  }, [tabFiltered, sortOrder]);
-
-  // Group by AY for timeline view
-  const groupedByAY = useMemo(() => {
-    const groups = {};
-    sortedEntries.forEach(entry => {
-      const label = entry.ay ? `AY ${entry.ay}` : "General / Cross-AY";
-      if (!groups[label]) groups[label] = [];
-      groups[label].push(entry);
-    });
-    // Preserve sorted order of groups
-    const orderedKeys = [];
-    sortedEntries.forEach(entry => {
-      const label = entry.ay ? `AY ${entry.ay}` : "General / Cross-AY";
-      if (!orderedKeys.includes(label)) orderedKeys.push(label);
-    });
-    return orderedKeys.map(k => ({ label: k, entries: groups[k] }));
-  }, [sortedEntries]);
-
-  const staleCount = memoryEntries.filter(e =>
-    e.ay_sort > 0 && e.ay_sort < 202223
-  ).length;
-
-  const avgConfidence = memoryEntries.length > 0
-    ? Math.round(memoryEntries.reduce((acc, e) => {
-        const text = e.value?.fact ?? "";
-        // Simple heuristic: longer, more specific facts = higher confidence
-        return acc + (text.length > 200 ? 88 : 74);
-      }, 0) / memoryEntries.length)
-    : 0;
-
-  const summary = clientSummaries[clientId] || {
-    name: "New Client",
-    profile: "No historical data found in memory bank.",
-    historyYears: 0,
-  };
-
-  const ayGroupColors = [
-    "border-l-indigo-500",
-    "border-l-violet-500",
-    "border-l-blue-500",
-    "border-l-cyan-500",
-    "border-l-emerald-500",
-  ];
+  const filteredEntries = memoryEntries.filter(entry => {
+    if (activeTab === "All") return true;
+    return entry.key.includes(activeTab.toLowerCase().replace(" ", "_"));
+  });
 
   return (
-    <div className="flex-1 h-full bg-slate-950 p-8 overflow-y-auto block">
-      {/* Header */}
-      <div className="mb-6 shrink-0">
-        <h2 className="text-2xl font-bold text-white mb-1">Memory Audit View</h2>
-        <p className="text-slate-400 text-sm">
-          Vectorize Hindsight memory bank · sorted by Assessment Year
+    <div style={s.root}>
+      {/* Top Nav */}
+      <div style={s.topNav}>
+        <div style={s.navGroup}>
+          <button
+            style={{
+              ...s.navBtn,
+              background: activeView === 'audit' ? '#FF5722' : '#fff',
+              color: activeView === 'audit' ? '#fff' : '#111',
+              border: '1px solid #E5E5E5',
+            }}
+            onClick={() => setActiveView('audit')}
+          >
+            <Database size={16} /> Memory Audit
+          </button>
+          <button
+            style={{
+              ...s.navBtn,
+              background: activeView === 'chat' ? '#FF5722' : '#fff',
+              color: activeView === 'chat' ? '#fff' : '#111',
+              border: '1px solid #E5E5E5',
+            }}
+            onClick={() => setActiveView('chat')}
+          >
+            <Sparkles size={16} /> Advisory Agent
+          </button>
+        </div>
+      </div>
+
+      {/* Page Header */}
+      <div style={s.pageHeader}>
+        <h2 style={s.heading}>Memory Audit</h2>
+        <p style={s.subheading}>
+          Direct access to the Vectorize Hindsight memory bank for this client.
         </p>
       </div>
 
-      {/* Client Mental Model */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-6 flex items-start gap-4">
-        <div className="bg-indigo-500/20 text-indigo-400 p-3 rounded-xl border border-indigo-500/30 mt-0.5 shrink-0">
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-          </svg>
+      {/* Stat Cards Row */}
+      <div style={s.statRow}>
+        <div style={s.statCardVertical}>
+          <div style={s.statLabelVertical}>MEMORY<br />ENTRIES</div>
+          <div style={s.statValueHugeBlack}>{memoryEntries.length}</div>
+          <div style={s.statFooterText}>indexed<br />docs</div>
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 mb-1 flex-wrap">
-            <h3 className="text-white font-bold">{summary.name}</h3>
-            {summary.historyYears > 0 && (
-              <span className="text-xs bg-indigo-500/15 text-indigo-400 px-2 py-0.5 rounded-full border border-indigo-500/20">
-                {summary.historyYears} yr history
-              </span>
-            )}
+        <div style={s.statCardVertical}>
+          <div style={s.statLabelVertical}>AVG<br />CONFIDENCE</div>
+          <div style={s.statValueHugeOrange}>72%</div>
+          <div style={s.progressBarContainer}>
+            <div style={s.progressBarFill}></div>
           </div>
-          <p className="text-slate-400 text-sm leading-relaxed">{summary.profile}</p>
+        </div>
+        <div style={s.statCardVertical}>
+          <div style={s.statLabelVertical}>STALE<br />ENTRIES</div>
+          <div style={s.statValueHugeBlack}>0</div>
+          <div style={s.statFooterText}>All fresh</div>
         </div>
       </div>
 
-      <StatsRow
-        entriesCount={memoryEntries.length}
-        avgConfidence={avgConfidence}
-        staleCount={staleCount}
-        lastSync="Just now"
-      />
-
-      {/* Controls row */}
-      <div className="flex items-center justify-between gap-4 mb-5 flex-wrap">
-        {/* Tabs */}
-        <div className="flex space-x-2 overflow-x-auto pb-1 scrollbar-hide">
-          {TABS.map(tab => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 rounded-lg font-medium text-sm transition-all whitespace-nowrap ${
-                activeTab === tab
-                  ? "bg-indigo-500 text-white shadow-lg shadow-indigo-500/25"
-                  : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-
-        {/* Sort + View controls */}
-        <div className="flex items-center gap-2 shrink-0">
+      {/* Tab Pills */}
+      <div style={s.tabRow}>
+        {TABS.map(tab => (
           <button
-            onClick={() => setSortOrder(o => o === "newest" ? "oldest" : "newest")}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-700 transition-all text-sm font-medium"
-            title={sortOrder === "newest" ? "Newest AY first" : "Oldest AY first"}
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            style={{
+              ...s.tabLight,
+              background: activeTab === tab ? '#111' : '#fff',
+              color: activeTab === tab ? '#fff' : '#111',
+              border: '1px solid #E5E5E5',
+            }}
           >
-            {sortOrder === "newest"
-              ? <ArrowDownUp size={14} className="text-indigo-400" />
-              : <ArrowUpDown size={14} className="text-indigo-400" />
-            }
-            {sortOrder === "newest" ? "Newest first" : "Oldest first"}
+            {tab}
           </button>
-          <button
-            onClick={() => setViewMode(v => v === "timeline" ? "grid" : "timeline")}
-            className="p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-700 transition-all"
-            title={viewMode === "timeline" ? "Switch to grid" : "Switch to timeline"}
-          >
-            {viewMode === "timeline" ? <LayoutGrid size={16} /> : <List size={16} />}
-          </button>
-        </div>
+        ))}
       </div>
 
-      {/* Content */}
-      {sortedEntries.length === 0 ? (
-        <div className="py-16 flex flex-col items-center justify-center border-2 border-dashed border-slate-800 rounded-2xl">
-          <p className="text-slate-500">No memory entries found for this category.</p>
-        </div>
-      ) : viewMode === "grid" ? (
-        /* Grid view */
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start pb-4">
-          <AnimatePresence>
-            {sortedEntries.map((entry, idx) => (
-              <MemoryCard key={entry.key} memory={entry} onDelete={handleDelete} />
-            ))}
-          </AnimatePresence>
-        </div>
-      ) : (
-        /* Timeline view — grouped by AY */
-        <div className="space-y-8 pb-4">
-          {groupedByAY.map((group, gIdx) => (
-            <motion.div
-              key={group.label}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: gIdx * 0.05 }}
-            >
-              {/* AY group header */}
-              <div className="flex items-center gap-3 mb-4">
-                <div className={`w-1 h-8 rounded-full ${['bg-indigo-500','bg-violet-500','bg-blue-500','bg-cyan-500','bg-emerald-500'][gIdx % 5]}`} />
-                <div>
-                  <h3 className="text-sm font-bold text-slate-200 tracking-wide">{group.label}</h3>
-                  <p className="text-xs text-slate-600">{group.entries.length} {group.entries.length === 1 ? 'record' : 'records'}</p>
-                </div>
-                <div className="flex-1 h-px bg-slate-800 ml-1" />
-              </div>
+      {/* Content Area */}
+      <div style={s.contentArea}>
+        {filteredEntries.length > 0 ? (
+          <div style={s.cardsGrid}>
+            <AnimatePresence>
+              {filteredEntries.map((entry) => (
+                <MemoryCard key={entry.key} memory={entry} onDelete={handleDelete} />
+              ))}
+            </AnimatePresence>
+          </div>
+        ) : (
+          <div style={s.emptyStateBox}>
+            <div style={s.emptyIcon}>
+              <Box size={24} color="#888" />
+            </div>
+            <h3 style={s.emptyTitle}>Nothing here yet</h3>
+            <p style={s.emptyText}>Upload files and Hindsight will start<br />building memory for this client.</p>
+          </div>
+        )}
+      </div>
 
-              {/* Cards in this AY group */}
-              <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 items-start pl-4 border-l-2 ${['border-l-indigo-500/30','border-l-violet-500/30','border-l-blue-500/30','border-l-cyan-500/30','border-l-emerald-500/30'][gIdx % 5]}`}>
-                {group.entries.map((entry, idx) => (
-                  <MemoryCard key={entry.key} memory={entry} onDelete={handleDelete} />
-                ))}
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
+
+const s = {
+  root: {
+    flex: 1,
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+    padding: '32px 32px 0',
+    minWidth: 0,
+  },
+  topNav: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: '48px',
+  },
+  navGroup: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+  },
+  navBtn: {
+    padding: '12px 24px',
+    borderRadius: '99px',
+    fontSize: '14px',
+    fontWeight: 600,
+    cursor: 'pointer',
+    letterSpacing: '-0.01em',
+    transition: 'all 0.15s',
+    fontFamily: "'Inter', sans-serif",
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+  },
+  statusPill: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '10px 16px',
+    background: '#fff',
+    border: '1px solid #E5E5E5',
+    borderRadius: '99px',
+    fontSize: '13px',
+    fontWeight: 500,
+    color: '#0D9488',
+  },
+  statusDot: {
+    width: '6px',
+    height: '6px',
+    borderRadius: '50%',
+    background: '#0D9488',
+  },
+  pageHeader: {
+    marginBottom: '32px',
+    flexShrink: 0,
+  },
+  heading: {
+    fontSize: '72px',
+    fontWeight: 400,
+    color: '#111',
+    margin: '0 0 12px',
+    fontFamily: "'Bebas Neue', sans-serif",
+    letterSpacing: '0.02em',
+    lineHeight: 1,
+    textTransform: 'uppercase',
+  },
+  subheading: {
+    fontSize: '16px',
+    color: '#888',
+    margin: 0,
+    fontFamily: "'Inter', sans-serif",
+  },
+  statRow: {
+    display: 'flex',
+    gap: '16px',
+    marginBottom: '32px',
+    flexShrink: 0,
+  },
+  statCardVertical: {
+    background: '#fff',
+    borderRadius: '16px',
+    padding: '16px 20px',
+    width: '160px',
+    display: 'flex',
+    flexDirection: 'column',
+    border: '1px solid #E5E5E5',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.02)',
+    flexShrink: 0,
+  },
+  statLabelVertical: {
+    fontSize: '11px',
+    fontWeight: 600,
+    color: '#888',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+    marginBottom: '16px',
+    lineHeight: 1.4,
+  },
+  statValueHugeBlack: {
+    fontSize: '64px',
+    fontWeight: 400,
+    color: '#111',
+    lineHeight: 1,
+    fontFamily: "'Bebas Neue', sans-serif",
+    letterSpacing: '0.02em',
+  },
+  statValueHugeOrange: {
+    fontSize: '64px',
+    fontWeight: 400,
+    color: '#FF5722',
+    lineHeight: 1,
+    fontFamily: "'Bebas Neue', sans-serif",
+    letterSpacing: '0.02em',
+  },
+  statFooterText: {
+    fontSize: '12px',
+    color: '#888',
+    marginTop: '12px',
+    lineHeight: 1.4,
+  },
+  progressBarContainer: {
+    width: '100%',
+    height: '4px',
+    background: '#E5E5E5',
+    marginTop: '12px',
+    borderRadius: '2px',
+  },
+  progressBarFill: {
+    width: '72%',
+    height: '100%',
+    background: '#FF5722',
+    borderRadius: '2px',
+  },
+  tabLight: {
+    padding: '10px 20px',
+    borderRadius: '99px',
+    fontSize: '14px',
+    fontWeight: 500,
+    cursor: 'pointer',
+    fontFamily: "'Inter', sans-serif",
+    transition: 'all 0.15s',
+  },
+  tabRow: {
+    display: 'flex',
+    gap: '8px',
+    marginBottom: '24px',
+    flexWrap: 'wrap',
+    flexShrink: 0,
+  },
+  tab: {
+    padding: '10px 20px',
+    borderRadius: '99px',
+    fontSize: '14px',
+    fontWeight: 500,
+    cursor: 'pointer',
+    fontFamily: "'Inter', sans-serif",
+    transition: 'all 0.15s',
+  },
+  contentArea: {
+    flex: 1,
+    overflowY: 'auto',
+    paddingBottom: '32px',
+  },
+  cardsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+    gap: '24px',
+    alignItems: 'start',
+  },
+  emptyStateBox: {
+    background: '#fff',
+    borderRadius: '24px',
+    padding: '64px 32px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    textAlign: 'center',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.02)',
+  },
+  emptyIcon: {
+    width: '48px',
+    height: '48px',
+    borderRadius: '12px',
+    background: '#F4F2E9',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: '24px',
+  },
+  emptyTitle: {
+    fontSize: '24px',
+    fontWeight: 900,
+    color: '#111',
+    margin: '0 0 12px',
+    fontFamily: "'Arial Black', system-ui, sans-serif",
+    letterSpacing: '-0.02em',
+  },
+  emptyText: {
+    fontSize: '15px',
+    color: '#888',
+    margin: 0,
+    lineHeight: 1.5,
+  },
+};
