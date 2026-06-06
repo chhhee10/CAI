@@ -67,6 +67,8 @@ CAI solves these challenges by separating the **Reasoning Layer** (LLM) from the
 
 ## 4. System Architecture & System Design
 
+![System Architecture Diagram](https://raw.githubusercontent.com/Vijeta-Patel/CAI/main/frontend/img/diagram.jpeg)
+
 CAI's runtime is divided into three key systems:
 1. **Frontend Interface (React/Vite)**: An editorial-brutalist SPA featuring high-performance micro-animations, a split-screen layout displaying the **Memory Audit View** beside the **Compliance Notice Panel**, and an interactive **Advisory Chat Panel** with drag-and-drop document upload.
 2. **Orchestration Server (FastAPI)**: Coordinates query validation, runs python-based agent runtimes, manages asynchronous calls to the Hindsight API, and formats model responses.
