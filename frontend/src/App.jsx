@@ -32,10 +32,9 @@ export default function App() {
 
   return (
     <div className="flex h-screen bg-slate-950 text-slate-200 font-sans overflow-hidden">
-      <ClientSidebar 
-        selectedClient={selectedClient} 
+      <ClientSidebar
+        selectedClient={selectedClient}
         onSelectClient={setSelectedClient}
-        activeClientEntriesCount={memoryEntries.length}
       />
       
       <div className="flex-1 flex flex-col h-full relative">

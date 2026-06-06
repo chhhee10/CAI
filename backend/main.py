@@ -64,8 +64,13 @@ async def yoy(client_id: str, ay_current: str, ay_previous: str):
 
 @app.get("/memory/{client_id}")
 async def get_memory(client_id: str):
-    results = await recall("", namespace=f"client:{client_id}", top_k=50)
-    return {"entries": results}
+    # Use a broad query covering all fact types so Hindsight ranks relevant results
+    results = await recall(
+        "tax income deductions notice preferences regime salary GST advance",
+        namespace=f"client:{client_id}",
+        top_k=60
+    )
+    return {"entries": results, "total": len(results)}
 
 @app.delete("/memory/{key:path}")
 async def delete_memory(key: str):
