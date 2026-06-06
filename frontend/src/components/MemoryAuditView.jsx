@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import MemoryCard from './MemoryCard';
 import { api } from '../api/client';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -8,6 +8,18 @@ const TABS = ["All", "Tax History", "Deductions", "Income", "Preferences", "Noti
 
 export default function MemoryAuditView({ clientId, clientName, memoryEntries, setMemoryEntries, activeView, setActiveView }) {
   const [activeTab, setActiveTab] = useState("All");
+  const [brief, setBrief] = useState(null);
+  const [loadingBrief, setLoadingBrief] = useState(false);
+
+  useEffect(() => {
+    if (!clientId) return;
+    setLoadingBrief(true);
+    setBrief(null);
+    api.getBrief(clientId)
+      .then(res => setBrief(res.brief))
+      .catch(() => setBrief("Could not load mental model."))
+      .finally(() => setLoadingBrief(false));
+  }, [clientId]);
 
   const handleDelete = async (key) => {
     await api.deleteMemory(key);
@@ -90,6 +102,21 @@ export default function MemoryAuditView({ clientId, clientName, memoryEntries, s
         <h2 style={s.heading}>Memory Audit</h2>
         <p style={s.subheading}>
           Direct access to the Vectorize Hindsight memory bank for this client.
+        </p>
+      </div>
+
+      {/* Mental Model Brief */}
+      <div style={s.briefBox}>
+        <div style={s.briefHeader}>
+          <Sparkles size={14} color="#FF5722" />
+          <span>HINDSIGHT MENTAL MODEL</span>
+        </div>
+        <p style={s.briefText}>
+          {loadingBrief 
+            ? "Synthesizing memory into a mental model..." 
+            : brief 
+              ? brief.replace(new RegExp(`Client\\s*${clientId}`, 'gi'), clientName).replace(new RegExp(clientId, 'gi'), clientName)
+              : "No mental model available."}
         </p>
       </div>
 
@@ -235,6 +262,32 @@ const s = {
     color: '#888',
     margin: 0,
     fontFamily: "'Inter', sans-serif",
+  },
+  briefBox: {
+    background: '#FDFBF4',
+    border: '1px solid #EAE6DB',
+    borderRadius: '16px',
+    padding: '20px 24px',
+    marginBottom: '32px',
+    flexShrink: 0,
+  },
+  briefHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    fontSize: '11px',
+    fontWeight: 700,
+    color: '#FF5722',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+    marginBottom: '12px',
+  },
+  briefText: {
+    fontSize: '15px',
+    color: '#111',
+    lineHeight: 1.6,
+    margin: 0,
+    fontWeight: 400,
   },
   statRow: {
     display: 'flex',

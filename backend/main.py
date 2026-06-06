@@ -114,6 +114,42 @@ async def get_memory(client_id: str):
     )
     return {"entries": results, "total": len(results)}
 
+@app.get("/brief/{client_id}")
+async def get_brief(client_id: str):
+    from groq import Groq
+    from utils.groq_retry import groq_call_with_retry
+    
+    results = await recall(
+        "tax income deductions notice preferences regime salary GST advance",
+        namespace=f"client:{client_id}",
+        top_k=30
+    )
+    
+    if not results:
+        return {"brief": "No significant memory found for this client to generate a mental model."}
+        
+    context = "\n".join([str(r["value"]["fact"]) for r in results])
+    
+    client = Groq()
+    def _call():
+        return client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {"role": "system", "content": "You are a CA's assistant. Based on the memory context provided, write a concise, one-paragraph mental model (max 3 sentences) summarizing this client's profile, key tax issues, and communication preferences. Write in third person."},
+                {"role": "user", "content": f"Context: {context}"}
+            ],
+            max_tokens=150,
+            temperature=0
+        )
+    
+    try:
+        response = groq_call_with_retry(_call)
+        brief = response.choices[0].message.content
+        return {"brief": brief}
+    except Exception as e:
+        print(f"Error generating brief: {e}")
+        return {"brief": "Unable to generate mental model at this time."}
+
 @app.delete("/memory/{key:path}")
 async def delete_memory(key: str):
     await delete_entry(key)
