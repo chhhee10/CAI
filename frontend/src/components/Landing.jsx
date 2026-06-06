@@ -242,7 +242,7 @@ export default function Landing({ onOpenDashboard }) {
           <motion.div
             initial="hidden"
             whileInView="visible"
-            viewport={{ once: true, margin: "-50px" }}
+            viewport={{ once: true, amount: 0.05 }}
             variants={staggerContainer}
             style={{ background: "#E84A00", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", flexShrink: 0 }}
           >
@@ -340,7 +340,7 @@ export default function Landing({ onOpenDashboard }) {
                 key={i}
                 initial={{ opacity: 0, y: 50 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
+                viewport={{ once: true, amount: 0.05 }}
                 transition={{ type: "spring", stiffness: 70, damping: 15, delay: i * 0.15 }}
                 whileHover={{
                   y: -10,
@@ -390,7 +390,7 @@ export default function Landing({ onOpenDashboard }) {
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
+            viewport={{ once: true, amount: 0.05 }}
             transition={{ type: "spring", stiffness: 70, damping: 15 }}
             style={{
               flex: 1,
@@ -430,7 +430,7 @@ export default function Landing({ onOpenDashboard }) {
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
+            viewport={{ once: true, amount: 0.05 }}
             transition={{ type: "spring", stiffness: 70, damping: 15 }}
             style={{
               flex: 1,
