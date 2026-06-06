@@ -19,6 +19,25 @@ export default function MemoryAuditView({ clientId, memoryEntries, setMemoryEntr
     return entry.key.includes(activeTab.toLowerCase().replace(" ", "_"));
   });
 
+  // Dynamically calculate stats
+  const totalEntries = memoryEntries.length;
+  let totalConfidence = 0;
+  let staleCount = 0;
+
+  memoryEntries.forEach(entry => {
+    const valObj = typeof entry.value === 'string' ? JSON.parse(entry.value) : entry.value;
+    const isVerified = valObj?.verified === "form16";
+    const conf = valObj?.confidence || (isVerified ? 95 : 72);
+    totalConfidence += conf;
+    
+    if (entry.key.includes("ay2122") || entry.key.includes("ay2223")) {
+      staleCount++;
+    }
+  });
+
+  const avgConfidence = totalEntries > 0 ? Math.round(totalConfidence / totalEntries) : 0;
+  const staleText = staleCount === 0 ? "All fresh" : `${staleCount} need review`;
+
   return (
     <div style={s.root}>
       {/* Top Nav */}
@@ -61,20 +80,20 @@ export default function MemoryAuditView({ clientId, memoryEntries, setMemoryEntr
       <div style={s.statRow}>
         <div style={s.statCardVertical}>
           <div style={s.statLabelVertical}>MEMORY<br />ENTRIES</div>
-          <div style={s.statValueHugeBlack}>{memoryEntries.length}</div>
+          <div style={s.statValueHugeBlack}>{totalEntries}</div>
           <div style={s.statFooterText}>indexed<br />docs</div>
         </div>
         <div style={s.statCardVertical}>
           <div style={s.statLabelVertical}>AVG<br />CONFIDENCE</div>
-          <div style={s.statValueHugeOrange}>72%</div>
+          <div style={s.statValueHugeOrange}>{avgConfidence}%</div>
           <div style={s.progressBarContainer}>
-            <div style={s.progressBarFill}></div>
+            <div style={{...s.progressBarFill, width: `${avgConfidence}%`}}></div>
           </div>
         </div>
         <div style={s.statCardVertical}>
           <div style={s.statLabelVertical}>STALE<br />ENTRIES</div>
-          <div style={s.statValueHugeBlack}>0</div>
-          <div style={s.statFooterText}>All fresh</div>
+          <div style={s.statValueHugeBlack}>{staleCount}</div>
+          <div style={s.statFooterText}>{staleText}</div>
         </div>
       </div>
 
@@ -127,7 +146,7 @@ const s = {
     height: '100%',
     display: 'flex',
     flexDirection: 'column',
-    overflow: 'hidden',
+    overflowY: 'auto',
     padding: '32px 32px 0',
     minWidth: 0,
   },
@@ -249,10 +268,10 @@ const s = {
     borderRadius: '2px',
   },
   progressBarFill: {
-    width: '72%',
     height: '100%',
     background: '#FF5722',
     borderRadius: '2px',
+    transition: 'width 0.4s ease',
   },
   tabLight: {
     padding: '10px 20px',
@@ -280,8 +299,6 @@ const s = {
     transition: 'all 0.15s',
   },
   contentArea: {
-    flex: 1,
-    overflowY: 'auto',
     paddingBottom: '32px',
   },
   cardsGrid: {
