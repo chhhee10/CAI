@@ -3,7 +3,7 @@ import { api } from '../api/client';
 import { Send, Sparkles, User, FileUp, Loader2, Database } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function ChatPanel({ clientId, onUploadComplete, activeView, setActiveView }) {
+export default function ChatPanel({ clientId, onUploadComplete, activeView, setActiveView, initialQuery, clearInitialQuery }) {
   const [messages, setMessages] = useState([{
     role: 'assistant',
     text: "Client switched. Memory reloaded.\nHow can I assist?"
@@ -17,6 +17,18 @@ export default function ChatPanel({ clientId, onUploadComplete, activeView, setA
   useEffect(() => {
     setMessages([{ role: 'assistant', text: "Client switched. Memory reloaded.\nHow can I assist?" }]);
   }, [clientId]);
+
+  useEffect(() => {
+    if (activeView === 'chat' && initialQuery && initialQuery.trim()) {
+      const q = initialQuery;
+      clearInitialQuery();
+      // Delay slightly to allow transition
+      setTimeout(() => {
+        handleSend(null, q);
+      }, 300);
+    }
+  }, [activeView, initialQuery]);
+
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });

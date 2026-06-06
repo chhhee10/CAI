@@ -5,6 +5,7 @@ import MemoryAuditView from './components/MemoryAuditView';
 import NoticePanel from './components/NoticePanel';
 import ChatPanel from './components/ChatPanel';
 import SplashScreen from './components/SplashScreen';
+import Landing from './components/Landing';
 import { api } from './api/client';
 
 export default function App() {
@@ -12,7 +13,9 @@ export default function App() {
   const [selectedClient, setSelectedClient] = useState('abcri1234d');
   const [activeView, setActiveView]         = useState('audit');
   const [memoryEntries, setMemoryEntries]   = useState([]);
-  const [showSplash, setShowSplash]         = useState(true);
+  const [showSplash, setShowSplash]         = useState(false);
+  const [showLanding, setShowLanding]       = useState(true);
+  const [initialChatQuery, setInitialChatQuery] = useState('');
 
   useEffect(() => {
     async function fetchClients() {
@@ -40,11 +43,45 @@ export default function App() {
   const activeClientObj = clients.find(c => c.id === selectedClient);
   const clientName = activeClientObj ? activeClientObj.name : "Unknown Client";
 
+  // Push initial landing state into history on first load
+  useEffect(() => {
+    window.history.replaceState({ page: 'landing' }, '');
+
+    const handlePop = (e) => {
+      if (e.state?.page === 'landing') {
+        setShowLanding(true);
+        setShowSplash(false);
+      }
+    };
+    window.addEventListener('popstate', handlePop);
+    return () => window.removeEventListener('popstate', handlePop);
+  }, []);
+
+  // Called when user clicks "Try CAI" or "Open Dashboard" on landing
+  const handleOpenDashboard = (query = '') => {
+    if (typeof query === 'string' && query.trim()) {
+      setInitialChatQuery(query);
+      setActiveView('chat');
+    } else {
+      setActiveView('audit');
+    }
+    window.history.pushState({ page: 'dashboard' }, '');
+    setShowSplash(true);
+  };
+
+  if (showLanding) {
+    return (
+      <>
+        <AnimatePresence>
+          {showSplash && <SplashScreen onComplete={() => { setShowSplash(false); setShowLanding(false); }} />}
+        </AnimatePresence>
+        {!showSplash && <Landing onOpenDashboard={handleOpenDashboard} />}
+      </>
+    );
+  }
+
   return (
     <>
-      <AnimatePresence>
-        {showSplash && <SplashScreen onComplete={() => setShowSplash(false)} />}
-      </AnimatePresence>
       <div style={s.shell}>
       {/* ── Left sidebar ───────────────────────────── */}
       <ClientSidebar
@@ -76,6 +113,8 @@ export default function App() {
               onUploadComplete={() => loadMemory(selectedClient)}
               activeView={activeView}
               setActiveView={setActiveView}
+              initialQuery={initialChatQuery}
+              clearInitialQuery={() => setInitialChatQuery('')}
             />
           </div>
         </div>
