@@ -197,16 +197,6 @@ Client data is organized hierarchically inside Vectorize Hindsight using specifi
 * `notices`: Scrutiny intimations, tax demands, GST notices, and corresponding deadlines.
 * `preferences`: Client communication channels, preferred filing regime rules, and risk tolerance thresholds.
 
-### Seeded Demo Clients
-CAI comes pre-seeded with synthetic, high-fidelity compliance records:
-
-| Client Name | Client ID | PAN | Assessment History | Core Features in Seed |
-| :--- | :--- | :--- | :---: | :--- |
-| **Ramesh Iyer** | `abcri1234d` | `ABCRI1234D` | 3 Years | Home loan eligibility, 143(1) Intimation notice, Old Tax Regime preference. |
-| **Priya Sharma** | `bcdps5678e` | `BCDPS5678E` | 2 Years | Freelance content writing income, PPF investments, New Tax Regime preference. |
-| **MK Traders** | `cdemk9012f` | `CDEMK9012F` | 1 Year | Sole proprietorship, GSTIN tracking, GSTR notice, anomalous cash deposits. |
-| **Suresh Karthik** | `dghsk3456g` | `DGHSK3456G` | 2 Years | Software engineer, RSU vesting, Capital Gains (LTCG) on stock sale. |
-| **Nalini Anand** | `efgna7890h` | `EFGNA7890H` | 3 Years | Self-employed gynaecologist, Presumptive taxation 44ADA, HDFC fixed deposit. |
 
 ---
 
