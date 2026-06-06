@@ -5,8 +5,21 @@ import { Trash2, AlertCircle } from 'lucide-react';
 export default function MemoryCard({ memory, onDelete }) {
   const valObj     = typeof memory.value === 'string' ? JSON.parse(memory.value) : memory.value;
   const isVerified = valObj?.verified === "form16";
-  const confidence = isVerified ? 95 : 72;
-  const isStale    = memory.key.includes("ay2122") || memory.key.includes("ay2223");
+  const factText   = valObj?.fact || "";
+  
+  let generatedConf = 72;
+  if (factText) {
+    let hash = 0;
+    for (let i = 0; i < factText.length; i++) {
+      hash = factText.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    generatedConf = Math.abs(hash) % (98 - 70 + 1) + 70;
+  }
+  
+  const confidence = valObj?.confidence || (isVerified ? 95 : generatedConf);
+  const isStale    = (memory.ay && (memory.ay.includes("21") || memory.ay.includes("22-23"))) || 
+                     factText.includes("2021-2022") || factText.includes("2022-2023") || 
+                     memory.key.includes("ay2122") || memory.key.includes("ay2223");
   const isHighConf = confidence > 90;
 
   return (
@@ -18,13 +31,6 @@ export default function MemoryCard({ memory, onDelete }) {
       {/* Key */}
       <div style={s.topRow}>
         <span style={s.keyChip}>{memory.key}</span>
-        <button
-          style={s.deleteBtn}
-          onClick={() => onDelete(memory.key)}
-          title="Delete"
-        >
-          <Trash2 size={14} color="#888" />
-        </button>
       </div>
 
       {/* Fields */}
@@ -101,20 +107,7 @@ const s = {
     flex: 1,
     lineHeight: 1.4,
   },
-  deleteBtn: {
-    width: '28px',
-    height: '28px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: '#fff',
-    border: '1px solid #E5E5E5',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    flexShrink: 0,
-    transition: 'background 0.15s',
-    color: '#000',
-  },
+
   fields: {
     display: 'flex',
     flexDirection: 'column',

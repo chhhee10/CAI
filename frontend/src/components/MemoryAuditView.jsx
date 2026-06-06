@@ -17,6 +17,8 @@ export default function MemoryAuditView({ clientId, memoryEntries, setMemoryEntr
   const filteredEntries = memoryEntries.filter(entry => {
     if (activeTab === "All") return true;
     return entry.key.includes(activeTab.toLowerCase().replace(" ", "_"));
+  }).sort((a, b) => {
+    return (b.ay_sort || 0) - (a.ay_sort || 0);
   });
 
   // Dynamically calculate stats
@@ -27,10 +29,27 @@ export default function MemoryAuditView({ clientId, memoryEntries, setMemoryEntr
   memoryEntries.forEach(entry => {
     const valObj = typeof entry.value === 'string' ? JSON.parse(entry.value) : entry.value;
     const isVerified = valObj?.verified === "form16";
-    const conf = valObj?.confidence || (isVerified ? 95 : 72);
+    const factText = valObj?.fact || "";
+    
+    // Deterministic pseudo-random confidence based on text hash
+    let generatedConf = 72;
+    if (factText) {
+      let hash = 0;
+      for (let i = 0; i < factText.length; i++) {
+        hash = factText.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      generatedConf = Math.abs(hash) % (98 - 70 + 1) + 70;
+    }
+    
+    const conf = valObj?.confidence || (isVerified ? 95 : generatedConf);
     totalConfidence += conf;
     
-    if (entry.key.includes("ay2122") || entry.key.includes("ay2223")) {
+    // Check if the entry is stale using the extracted AY or fact text
+    const isStale = (entry.ay && (entry.ay.includes("21") || entry.ay.includes("22-23"))) || 
+                    factText.includes("2021-2022") || factText.includes("2022-2023") || 
+                    entry.key.includes("ay2122") || entry.key.includes("ay2223");
+    
+    if (isStale) {
       staleCount++;
     }
   });

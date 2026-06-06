@@ -11,7 +11,7 @@ const s = {
     display: 'flex',
     flexDirection: 'column',
     flexShrink: 0,
-    overflowY: 'auto',
+    overflow: 'hidden',
   },
   header: {
     padding: '48px 32px 32px',
@@ -38,6 +38,7 @@ const s = {
   section: {
     flex: 1,
     overflowY: 'auto',
+    minHeight: 0,
     padding: '0 32px',
     display: 'flex',
     flexDirection: 'column',
@@ -106,7 +107,7 @@ const s = {
     color: '#888',
   },
   newClientBtn: {
-    marginTop: 'auto',
+    marginTop: '0',
     padding: '32px',
     background: 'transparent',
     border: 'none',

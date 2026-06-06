@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 
 export default function SplashScreen({ onComplete }) {
-  const [text, setText] = useState('');
   const [showCursor, setShowCursor] = useState(true);
+  const textRef = useRef(null);
 
   // Blinking cursor
   useEffect(() => {
@@ -13,58 +13,56 @@ export default function SplashScreen({ onComplete }) {
     return () => clearInterval(cursorInterval);
   }, []);
 
-  // Typing animation sequence
+  // Typing animation sequence using pure DOM mutation to survive React renders
   useEffect(() => {
-    let timeoutId;
-    let isCancelled = false;
-    
-    const wait = (ms) => new Promise(resolve => { timeoutId = setTimeout(resolve, ms); });
-    
-    const typeText = async (str, speed = 60) => {
-      for (let i = 0; i <= str.length; i++) {
-        if (isCancelled) return;
-        setText(str.slice(0, i));
-        await wait(speed);
-      }
-    };
+    let active = true;
+    const runSequence = async () => {
+      const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+      const set = (str) => {
+        if (active && textRef.current) textRef.current.textContent = str;
+      };
 
-    const deleteText = async (currentStr, targetLength, speed = 40) => {
-      for (let i = currentStr.length; i >= targetLength; i--) {
-        if (isCancelled) return;
-        setText(currentStr.slice(0, i));
-        await wait(speed);
-      }
-    };
-
-    const playAnimation = async () => {
-      // 1. Wait a moment with blinking cursor
       await wait(300);
-      if (isCancelled) return;
+      if (!active) return;
       
-      // 2. Type "cai"
-      await typeText("cai", 40);
-      await wait(200);
+      const target = "chartered accountant ";
+      
+      // Type chartered accountant
+      for (let i = 1; i <= target.length; i++) {
+        if (!active) return;
+        set(target.slice(0, i));
+        await wait(40);
+      }
+      
+      // Wait for one blink cycle (~800ms)
+      await wait(800);
+      if (!active) return;
 
-      // 3. Delete "ai", type "hartered accountant " -> "chartered accountant "
-      await deleteText("cai", 1, 20);
-      await typeText("chartered accountant ", 30);
-      await wait(800); // 800ms wait allows for exactly one 400ms on/off blink cycle
+      // Collapse rapidly back to "c"
+      for (let i = target.length - 1; i >= 1; i--) {
+        if (!active) return;
+        set(target.slice(0, i));
+        await wait(15);
+      }
 
-      // 4. Delete all, type "cai"
-      await deleteText("chartered accountant ", 0, 10);
-      await typeText("cai", 30);
-      await wait(400);
+      // Type "ai" to finish on "cai"
+      if (!active) return;
+      set("ca");
+      await wait(40);
+      
+      if (!active) return;
+      set("cai");
+      await wait(500);
 
-      if (!isCancelled) {
+      if (active) {
         onComplete();
       }
     };
 
-    playAnimation();
+    runSequence();
 
     return () => {
-      isCancelled = true;
-      clearTimeout(timeoutId);
+      active = false;
     };
   }, [onComplete]);
 
@@ -95,7 +93,7 @@ export default function SplashScreen({ onComplete }) {
         alignItems: 'center',
         whiteSpace: 'pre',
       }}>
-        {text}
+        <span ref={textRef}></span>
         <span style={{ opacity: showCursor ? 1 : 0 }}>_</span>
       </div>
     </motion.div>

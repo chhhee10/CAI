@@ -40,7 +40,6 @@ export default function NoticePanel({ clientId }) {
 
         <div style={s.cardFooter}>
           <span style={s.footerText}>{isClosed ? 'Resolved' : 'Action required'}</span>
-          <button style={s.actionBtn}>{isClosed ? 'View' : 'Open'}</button>
         </div>
       </div>
     );
@@ -205,17 +204,7 @@ const s = {
     fontWeight: 500,
     color: '#888',
   },
-  actionBtn: {
-    background: '#111',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '6px',
-    padding: '6px 12px',
-    fontSize: '12px',
-    fontWeight: 600,
-    cursor: 'pointer',
-    fontFamily: "'Inter', sans-serif",
-  },
+
   emptyOpenBox: {
     width: '100%',
     background: '#FDFBF4',
