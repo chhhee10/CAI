@@ -66,7 +66,14 @@ export default function Landing({ onOpenDashboard }) {
         rel="stylesheet"
       />
 
-      <div style={{ fontFamily: "'Space Grotesk', sans-serif", width: "100%", overflowX: "hidden" }}>
+      <div style={{
+        fontFamily: "'Space Grotesk', sans-serif",
+        width: "100%",
+        height: "100vh",
+        overflowY: "auto",
+        scrollBehavior: "smooth",
+        overflowX: "hidden"
+      }}>
 
         {/* ══════════════════════════════════════
             SCREEN 1 — Hero + Stats (100vh)
