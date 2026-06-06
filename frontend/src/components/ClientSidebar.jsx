@@ -1,13 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
-
-const CLIENTS = [
-  { id: "abcri1234d",   name: "Ramesh Iyer",  pan: "ABCRI1234D", entries: 14, years: 3  },
-  { id: "bcdps5678e",   name: "Priya Sharma",  pan: "BCDPS5678E", entries: 4,  years: 2  },
-  { id: "cdemk9012f",   name: "MK Traders",    pan: "CDEMK9012F", entries: 2,  years: 1  },
-  { id: "newclient000", name: "New Client",    pan: "ZZZXX0000Z", entries: 0,  years: 0  },
-];
+import { api } from '../api/client';
 
 const s = {
   root: {
@@ -17,7 +11,7 @@ const s = {
     display: 'flex',
     flexDirection: 'column',
     flexShrink: 0,
-    overflow: 'hidden',
+    overflowY: 'auto',
   },
   header: {
     padding: '48px 32px 32px',
@@ -128,6 +122,20 @@ const s = {
 };
 
 export default function ClientSidebar({ selectedClient, onSelectClient }) {
+  const [clients, setClients] = useState([]);
+
+  useEffect(() => {
+    async function fetchClients() {
+      try {
+        const data = await api.getClients();
+        setClients(data);
+      } catch (err) {
+        console.error("Failed to fetch clients", err);
+      }
+    }
+    fetchClients();
+  }, []);
+
   return (
     <div style={s.root}>
       <div style={s.header}>
@@ -139,7 +147,7 @@ export default function ClientSidebar({ selectedClient, onSelectClient }) {
         <div style={s.sectionLabel}>CLIENTS</div>
 
         <div style={s.list}>
-          {CLIENTS.map((client) => {
+          {clients.map((client) => {
             const isActive = selectedClient === client.id;
             
             return (
@@ -166,7 +174,7 @@ export default function ClientSidebar({ selectedClient, onSelectClient }) {
         </div>
       </div>
 
-      <button style={s.newClientBtn}>
+      <button style={s.newClientBtn} onClick={() => onSelectClient('newclient000')}>
         <span>+</span> New client
       </button>
     </div>

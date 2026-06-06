@@ -9,6 +9,10 @@ export const api = {
         });
         return res.json();
     },
+    async getClients() {
+        const res = await fetch(`${BASE_URL}/clients`);
+        return res.json();
+    },
     async getMemory(clientId) {
         const res = await fetch(`${BASE_URL}/memory/${clientId}?t=${Date.now()}`);
         return res.json();
