@@ -1,89 +1,93 @@
 import React, { useState, useEffect } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import ClientSidebar from './components/ClientSidebar';
 import MemoryAuditView from './components/MemoryAuditView';
 import NoticePanel from './components/NoticePanel';
 import ChatPanel from './components/ChatPanel';
+import SplashScreen from './components/SplashScreen';
 import { api } from './api/client';
-import { Activity, Bell, MessageSquare, LayoutDashboard } from 'lucide-react';
 
 export default function App() {
   const [selectedClient, setSelectedClient] = useState('abcri1234d');
-  const [activeView, setActiveView] = useState('audit'); // 'audit', 'chat'
-  const [memoryEntries, setMemoryEntries] = useState([]);
+  const [activeView, setActiveView]         = useState('audit');
+  const [memoryEntries, setMemoryEntries]   = useState([]);
+  const [showSplash, setShowSplash]         = useState(true);
 
   const loadMemory = async (clientId) => {
     try {
       const res = await api.getMemory(clientId);
       setMemoryEntries(res.entries || []);
-    } catch (e) {
-      console.error(e);
+    } catch {
       setMemoryEntries([]);
     }
   };
 
-  useEffect(() => {
-    loadMemory(selectedClient);
-  }, [selectedClient]);
-
-  const handleUploadComplete = () => {
-    // Reload memory after document upload
-    loadMemory(selectedClient);
-  };
+  useEffect(() => { loadMemory(selectedClient); }, [selectedClient]);
 
   return (
-    <div className="flex h-screen bg-slate-950 text-slate-200 font-sans overflow-hidden">
+    <>
+      <AnimatePresence>
+        {showSplash && <SplashScreen onComplete={() => setShowSplash(false)} />}
+      </AnimatePresence>
+      <div style={s.shell}>
+      {/* ── Left sidebar ───────────────────────────── */}
       <ClientSidebar
         selectedClient={selectedClient}
         onSelectClient={setSelectedClient}
+        activeClientEntriesCount={memoryEntries.length}
       />
-      
-      <div className="flex-1 flex flex-col h-full relative">
-        {/* Top Navigation */}
-        <div className="h-14 border-b border-slate-800 bg-slate-900/80 backdrop-blur flex items-center px-6 gap-6">
-          <button 
-            onClick={() => setActiveView('audit')}
-            className={`flex items-center gap-2 h-full px-2 border-b-2 transition-colors ${
-              activeView === 'audit' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <DatabaseIcon size={18} />
-            Memory Audit
-          </button>
-          <button 
-            onClick={() => setActiveView('chat')}
-            className={`flex items-center gap-2 h-full px-2 border-b-2 transition-colors ${
-              activeView === 'chat' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <MessageSquare size={18} />
-            Advisory Agent
-          </button>
-        </div>
 
-        {/* Main Content Area */}
-        <div className="flex-1 flex overflow-hidden">
-          {/* Audit View */}
-          <div className={`flex-1 flex overflow-hidden ${activeView === 'audit' ? 'flex' : 'hidden'}`}>
-            <MemoryAuditView 
-              clientId={selectedClient} 
-              memoryEntries={memoryEntries} 
-              setMemoryEntries={setMemoryEntries} 
+      {/* ── Main column ────────────────────────────── */}
+      <div style={s.main}>
+        {/* Content views */}
+        <div style={s.views}>
+          <div style={{ display: activeView === 'audit' ? 'flex' : 'none', flex: 1, overflow: 'hidden' }}>
+            <MemoryAuditView
+              clientId={selectedClient}
+              memoryEntries={memoryEntries}
+              setMemoryEntries={setMemoryEntries}
+              activeView={activeView}
+              setActiveView={setActiveView}
             />
-            <div className="w-96 hidden lg:block border-l border-slate-800">
-              <NoticePanel clientId={selectedClient} />
-            </div>
+            <NoticePanel clientId={selectedClient} />
           </div>
 
-          {/* Chat View */}
-          <div className={`flex-1 flex overflow-hidden ${activeView === 'chat' ? 'flex' : 'hidden'}`}>
-            <ChatPanel clientId={selectedClient} onUploadComplete={handleUploadComplete} />
+          <div style={{ display: activeView === 'chat' ? 'flex' : 'none', flex: 1, overflow: 'hidden' }}>
+            <ChatPanel
+              clientId={selectedClient}
+              onUploadComplete={() => loadMemory(selectedClient)}
+              activeView={activeView}
+              setActiveView={setActiveView}
+            />
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
 
-function DatabaseIcon({ size }) {
-  return <LayoutDashboard size={size} />;
-}
+const s = {
+  shell: {
+    display: 'flex',
+    height: '100vh',
+    width: '100vw',
+    background: '#F4F2E9',
+    fontFamily: "'Inter', -apple-system, sans-serif",
+    overflow: 'hidden',
+    color: '#111',
+  },
+  main: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+    minWidth: 0,
+    background: '#F4F2E9',
+  },
+  views: {
+    flex: 1,
+    display: 'flex',
+    overflow: 'hidden',
+  },
+};

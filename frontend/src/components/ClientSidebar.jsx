@@ -1,142 +1,174 @@
-import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { UserCircle, Briefcase, FileText, Loader2 } from 'lucide-react';
-import clsx from 'clsx';
-import { api } from '../api/client';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowUpRight } from 'lucide-react';
 
-// Ground-truth client list — matches hindsight_kb.json exactly
 const CLIENTS = [
-  { id: "abcri1234d",  name: "Ramesh Iyer",    pan: "ABCRI1234D", years: 3, facts: 15, type: "individual" },
-  { id: "bcdps5678e",  name: "Priya Sharma",   pan: "BCDPS5678E", years: 2, facts: 15, type: "individual" },
-  { id: "cdemk9012f",  name: "MK Traders",     pan: "CDEMK9012F", years: 1, facts: 10, type: "business"   },
-  { id: "dghsk3456g",  name: "Suresh Karthik", pan: "DGHSK3456G", years: 2, facts: 10, type: "individual" },
-  { id: "efgna7890h",  name: "Nalini Anand",   pan: "EFGNA7890H", years: 3, facts: 10, type: "individual" },
-  { id: "newclient000", name: "New Client",    pan: "ZZZXX0000Z", years: 0, facts: 0,  type: "individual" },
+  { id: "abcri1234d",   name: "Ramesh Iyer",  pan: "ABCRI1234D", entries: 14, years: 3  },
+  { id: "bcdps5678e",   name: "Priya Sharma",  pan: "BCDPS5678E", entries: 4,  years: 2  },
+  { id: "cdemk9012f",   name: "MK Traders",    pan: "CDEMK9012F", entries: 2,  years: 1  },
+  { id: "newclient000", name: "New Client",    pan: "ZZZXX0000Z", entries: 0,  years: 0  },
 ];
 
+const s = {
+  root: {
+    width: '280px',
+    height: '100%',
+    background: '#fff',
+    display: 'flex',
+    flexDirection: 'column',
+    flexShrink: 0,
+    overflow: 'hidden',
+  },
+  header: {
+    padding: '48px 32px 32px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+  },
+  logoText: {
+    fontSize: '160px',
+    fontWeight: 400, // Bebas Neue is naturally bold but doesn't have a 900 weight
+    color: '#111',
+    letterSpacing: '0.02em',
+    lineHeight: 0.8,
+    fontFamily: "'Bebas Neue', sans-serif",
+    margin: 0,
+    textTransform: 'uppercase',
+  },
+  logoUnderline: {
+    width: '48px',
+    height: '4px',
+    background: '#FF5722',
+    marginTop: '12px',
+  },
+  section: {
+    flex: 1,
+    overflowY: 'auto',
+    padding: '0 32px',
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  sectionLabel: {
+    fontSize: '11px',
+    fontWeight: 600,
+    color: '#888',
+    marginBottom: '16px',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+  },
+  list: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px',
+  },
+  clientBtn: {
+    width: '100%',
+    padding: '0',
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    textAlign: 'left',
+    fontFamily: "'Inter', sans-serif",
+  },
+  activeCard: {
+    background: '#111',
+    borderRadius: '12px',
+    padding: '16px',
+    color: '#fff',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+  },
+  inactiveText: {
+    fontSize: '15px',
+    fontWeight: 500,
+    color: '#111',
+    padding: '8px 16px',
+  },
+  activeName: {
+    fontSize: '16px',
+    fontWeight: 600,
+    color: '#fff',
+    marginBottom: '4px',
+  },
+  activeSub: {
+    fontSize: '12px',
+    color: '#888',
+    marginBottom: '12px',
+  },
+  pillRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+  },
+  orangePill: {
+    background: '#FF5722',
+    color: '#fff',
+    fontSize: '11px',
+    fontWeight: 600,
+    padding: '4px 8px',
+    borderRadius: '6px',
+  },
+  greyText: {
+    fontSize: '12px',
+    color: '#888',
+  },
+  newClientBtn: {
+    marginTop: 'auto',
+    padding: '32px',
+    background: 'transparent',
+    border: 'none',
+    color: '#FF5722',
+    fontSize: '15px',
+    fontWeight: 500,
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    fontFamily: "'Inter', sans-serif",
+  },
+};
+
 export default function ClientSidebar({ selectedClient, onSelectClient }) {
-  // Map of clientId → live recall count (fetched once per session)
-  const [liveCounts, setLiveCounts] = useState({});
-  const [loadingId, setLoadingId]   = useState(null);
-
-  // Fetch live memory counts for all real clients on mount
-  useEffect(() => {
-    const fetchCounts = async () => {
-      const results = await Promise.allSettled(
-        CLIENTS.filter(c => c.facts > 0).map(async (client) => {
-          try {
-            const res = await api.getMemory(client.id);
-            return { id: client.id, count: (res.entries || []).length };
-          } catch {
-            return { id: client.id, count: client.facts }; // fallback to KB-defined count
-          }
-        })
-      );
-      const counts = {};
-      results.forEach(r => {
-        if (r.status === 'fulfilled' && r.value) {
-          counts[r.value.id] = r.value.count;
-        }
-      });
-      setLiveCounts(counts);
-    };
-    fetchCounts();
-  }, []);
-
-  const handleSelect = (clientId) => {
-    setLoadingId(clientId);
-    onSelectClient(clientId);
-    // Clear loading indicator after a moment
-    setTimeout(() => setLoadingId(null), 800);
-  };
-
   return (
-    <div className="w-72 h-full bg-slate-900 border-r border-slate-800 flex flex-col overflow-hidden shrink-0">
-      {/* Brand header */}
-      <div className="p-6 border-b border-slate-800">
-        <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-cyan-400">
-          AI CA Agent
-        </h1>
-        <p className="text-slate-400 text-sm mt-1">Memory-Powered OS</p>
+    <div style={s.root}>
+      <div style={s.header}>
+        <h1 style={s.logoText}>CAI</h1>
+        <div style={s.logoUnderline}></div>
       </div>
 
-      {/* Client list */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-2">
-        <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest px-1 mb-3">
-          Clients · {CLIENTS.filter(c => c.facts > 0).length} active
-        </p>
+      <div style={s.section}>
+        <div style={s.sectionLabel}>CLIENTS</div>
 
-        {CLIENTS.map((client) => {
-          const isSelected   = selectedClient === client.id;
-          const isLoading    = loadingId === client.id;
-          // Prefer live recall count; fall back to KB-defined fact count
-          const displayCount = liveCounts[client.id] ?? client.facts;
-          const hasMemory    = displayCount > 0;
-
-          return (
-            <motion.div
-              key={client.id}
-              whileHover={{ scale: 1.015 }}
-              whileTap={{ scale: 0.985 }}
-              onClick={() => handleSelect(client.id)}
-              className={clsx(
-                "p-4 rounded-xl cursor-pointer transition-all border",
-                isSelected
-                  ? "bg-indigo-500/10 border-indigo-500/30 shadow-[0_0_15px_rgba(99,102,241,0.15)]"
-                  : "bg-slate-800/50 border-slate-700 hover:border-slate-600 hover:bg-slate-800"
-              )}
-            >
-              <div className="flex items-center space-x-3 mb-2">
-                <div className={clsx(
-                  "p-2 rounded-lg transition-colors",
-                  isSelected ? "bg-indigo-500/20" : "bg-slate-700"
-                )}>
-                  {client.type === "business"
-                    ? <Briefcase size={17} className={isSelected ? "text-indigo-300" : "text-cyan-400"} />
-                    : <UserCircle size={17} className={isSelected ? "text-indigo-300" : "text-indigo-400"} />
-                  }
-                </div>
-                <div className="min-w-0">
-                  <h3 className={clsx(
-                    "font-semibold text-sm truncate",
-                    isSelected ? "text-indigo-200" : "text-slate-100"
-                  )}>
-                    {client.name}
-                  </h3>
-                  <p className="text-[11px] text-slate-500 font-mono">{client.pan}</p>
-                </div>
-                {isLoading && <Loader2 size={14} className="text-indigo-400 animate-spin ml-auto shrink-0" />}
-              </div>
-
-              <div className="flex items-center justify-between mt-2 text-xs text-slate-400">
-                <span className="flex items-center gap-1.5">
-                  <span className={clsx(
-                    "w-1.5 h-1.5 rounded-full",
-                    hasMemory ? "bg-emerald-400" : "bg-slate-600"
-                  )} />
-                  {hasMemory
-                    ? <>{displayCount} fact{displayCount !== 1 ? 's' : ''}</>
-                    : <span className="text-slate-600">No history</span>
-                  }
-                </span>
-                {client.years > 0 && (
-                  <span className="flex items-center gap-1 text-slate-500">
-                    <FileText size={11} />
-                    {client.years} yr{client.years !== 1 ? 's' : ''}
-                  </span>
+        <div style={s.list}>
+          {CLIENTS.map((client) => {
+            const isActive = selectedClient === client.id;
+            
+            return (
+              <button
+                key={client.id}
+                onClick={() => onSelectClient(client.id)}
+                style={s.clientBtn}
+              >
+                {isActive ? (
+                  <motion.div layoutId="activeClient" style={s.activeCard}>
+                    <div style={s.activeName}>{client.name}</div>
+                    <div style={s.activeSub}>{client.pan}</div>
+                    <div style={s.pillRow}>
+                      <span style={s.orangePill}>{client.entries} entries</span>
+                      <span style={s.greyText}>{client.years} yrs</span>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <div style={s.inactiveText}>{client.name}</div>
                 )}
-              </div>
-            </motion.div>
-          );
-        })}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Footer */}
-      <div className="p-4 border-t border-slate-800">
-        <p className="text-[10px] text-slate-700 text-center">
-          Powered by Vectorize Hindsight
-        </p>
-      </div>
+      <button style={s.newClientBtn}>
+        <span>+</span> New client
+      </button>
     </div>
   );
 }

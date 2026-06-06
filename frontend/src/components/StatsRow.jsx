@@ -4,31 +4,74 @@ import { motion } from 'framer-motion';
 
 export default function StatsRow({ entriesCount, avgConfidence, staleCount, lastSync }) {
   const stats = [
-    { label: "Memory Entries", value: entriesCount, icon: Database, color: "text-blue-400", bg: "bg-blue-400/10" },
-    { label: "Avg Confidence", value: `${avgConfidence}%`, icon: Activity, color: "text-emerald-400", bg: "bg-emerald-400/10" },
-    { label: "Stale Entries (>9m)", value: staleCount, icon: ShieldAlert, color: staleCount > 0 ? "text-amber-400" : "text-slate-400", bg: staleCount > 0 ? "bg-amber-400/10" : "bg-slate-800" },
-    { label: "Last Write", value: lastSync, icon: Clock, color: "text-purple-400", bg: "bg-purple-400/10" }
+    { label: "Memory Entries",   value: entriesCount,       icon: Database,    accent: '#E8641E' },
+    { label: "Avg Confidence",   value: `${avgConfidence}%`,icon: Activity,    accent: '#16a34a' },
+    { label: "Stale Entries",    value: staleCount,          icon: ShieldAlert, accent: staleCount > 0 ? '#f59e0b' : '#ccc' },
+    { label: "Last Write",       value: lastSync,            icon: Clock,       accent: '#6366f1' },
   ];
 
   return (
-    <div className="grid grid-cols-4 gap-4 mb-8">
-      {stats.map((s, i) => (
+    <div style={s.grid}>
+      {stats.map((stat, i) => (
         <motion.div
           key={i}
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: i * 0.1 }}
-          className="bg-slate-800/50 border border-slate-700/50 backdrop-blur-md rounded-2xl p-4 flex items-center space-x-4"
+          transition={{ delay: i * 0.07 }}
+          style={s.card}
         >
-          <div className={`p-3 rounded-xl ${s.bg}`}>
-            <s.icon size={20} className={s.color} />
+          <div style={{ ...s.iconWrap, background: `${stat.accent}18` }}>
+            <stat.icon size={16} color={stat.accent} />
           </div>
           <div>
-            <p className="text-slate-400 text-xs font-medium uppercase tracking-wider">{s.label}</p>
-            <p className="text-slate-100 font-bold text-lg">{s.value}</p>
+            <p style={s.label}>{stat.label}</p>
+            <p style={s.value}>{stat.value}</p>
           </div>
         </motion.div>
       ))}
     </div>
   );
 }
+
+const s = {
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(4, 1fr)',
+    gap: '10px',
+    marginBottom: '24px',
+  },
+  card: {
+    background: '#fff',
+    border: '1px solid #E8E4DA',
+    borderRadius: '12px',
+    padding: '14px 16px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+  },
+  iconWrap: {
+    width: '34px',
+    height: '34px',
+    borderRadius: '9px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  label: {
+    fontSize: '10px',
+    color: '#bbb',
+    fontWeight: 600,
+    textTransform: 'uppercase',
+    letterSpacing: '0.08em',
+    margin: '0 0 2px',
+  },
+  value: {
+    fontSize: '18px',
+    fontWeight: 800,
+    color: '#111',
+    letterSpacing: '-0.03em',
+    margin: 0,
+    fontFamily: "'Inter', sans-serif",
+  },
+};
