@@ -38,22 +38,22 @@ export default function SplashScreen({ onComplete }) {
 
     const playAnimation = async () => {
       // 1. Wait a moment with blinking cursor
-      await wait(300);
+      await wait(150);
       if (isCancelled) return;
       
       // 2. Type "cai"
-      await typeText("cai", 40);
-      await wait(200);
+      await typeText("cai", 20);
+      await wait(100);
 
-      // 3. Delete "ai", type "hartered accountant " -> "chartered accountant "
-      await deleteText("cai", 1, 20);
-      await typeText("chartered accountant ", 30);
-      await wait(800); // 800ms wait allows for exactly one 400ms on/off blink cycle
+      // 3. Delete "ai", type "hartered accountant intelligence" -> "chartered accountant intelligence"
+      await deleteText("cai", 1, 10);
+      await typeText("chartered accountant intelligence", 15);
+      await wait(400);
 
       // 4. Delete all, type "cai"
-      await deleteText("chartered accountant ", 0, 10);
-      await typeText("cai", 30);
-      await wait(400);
+      await deleteText("chartered accountant intelligence", 0, 6);
+      await typeText("cai", 15);
+      await wait(200);
 
       if (!isCancelled) {
         onComplete();
@@ -87,7 +87,7 @@ export default function SplashScreen({ onComplete }) {
       }}
     >
       <div style={{
-        fontSize: '32px',
+        fontSize: 'clamp(18px, 3.5vw, 24px)',
         fontWeight: 900,
         color: '#FF5722',
         fontFamily: "'Inter', sans-serif",

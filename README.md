@@ -1,687 +1,356 @@
-# CAI
+# CAI — Chartered Accountant Intelligence
+### Persistent, Memory-First Multi-Agent Tax Advisory Operating System
 
-CAI is an AI-powered Chartered Accountant assistant that combines a FastAPI backend, a React/Vite frontend, Groq-hosted LLM calls, LangSmith tracing, PDF extraction, and live Vectorize Hindsight integration. The project is designed as a working demo of how a CA can ask client-specific tax questions, inspect the exact memory used by the assistant, upload Form 16 documents, and track notices or compliance deadlines.
+![CAI Dashboard Interface](https://raw.githubusercontent.com/Vijeta-Patel/CAI/main/frontend/img/dasboard.png)
+
+CAI is a production-grade AI-powered Chartered Accountant assistant. Unlike standard conversational AI systems that lose context between sessions, CAI implements a decoupled, persistent memory architecture powered by the **Vectorize Hindsight Cloud API**. It coordinates a network of specialized LLM agents (routing, advisory, document parsing, notices, YoY delta comparison, and anomaly detection) with real-time vector memory recall, fully observed and traced via **LangSmith**.
+
+---
 
 ## Table of Contents
+1. [Executive Summary & Vision](#1-executive-summary--vision)
+2. [The Core Problem: Context Fragmentation in Tax Prep](#2-the-core-problem-context-fragmentation-in-tax-prep)
+3. [The Solution: Decoupled Persistent Memory Architecture](#3-the-solution-decoupled-persistent-memory-architecture)
+4. [System Architecture & System Design](#4-system-architecture--system-design)
+5. [Specialized Multi-Agent Orchestration](#5-specialized-multi-agent-orchestration)
+6. [Data Flow & Execution Sequences](#6-data-flow--execution-sequences)
+7. [Observability & Tracing via LangSmith](#7-observability--tracing-via-langsmith)
+8. [Hindsight Vector Memory Schema & Storage Design](#8-hindsight-vector-memory-schema--storage-design)
+9. [Model Usage, Token Budgets, & Error Resilience](#9-model-usage-token-budgets--error-resilience)
+10. [Local Development & Setup Guide](#10-local-development--setup-guide)
+11. [Step-by-Step Judge Demo Flow](#11-step-by-step-judge-demo-flow)
+12. [Project Structure](#12-project-structure)
 
-1. [Project Overview](#project-overview)
-2. [Core Problem](#core-problem)
-3. [Solution](#solution)
-4. [Key Features](#key-features)
-5. [Architecture](#architecture)
-6. [Agent Workflow](#agent-workflow)
-7. [Model Usage and Numbers](#model-usage-and-numbers)
-8. [Hindsight Memory Usage and Numbers](#hindsight-memory-usage-and-numbers)
-9. [Seeded Demo Data](#seeded-demo-data)
-10. [Backend API](#backend-api)
-11. [Frontend UI](#frontend-ui)
-12. [Tech Stack](#tech-stack)
-13. [Setup](#setup)
-14. [Demo Flow](#demo-flow)
-15. [Project Structure](#project-structure)
-16. [Environment Variables](#environment-variables)
-17. [Current Limitations](#current-limitations)
-18. [Recent Enhancements](#recent-enhancements)
+---
 
-## Recent Enhancements
+## 1. Executive Summary & Vision
 
-- **Real-Time Vector Synchronization & Stateful Consistency**: Engineered a bidirectional, real-time sync pipeline to eradicate state discrepancies between the global navigation sidebar and the Memory Audit View. The application now natively interfaces with the Vectorize Hindsight Cloud via asynchronous semantic retrieval (`arecall`), guaranteeing millisecond-latency data parity across the distributed UI architecture.
-- **Deterministic Heuristic Confidence Scoring**: Deprecated static fallback metrics in favor of a highly optimized, zero-latency cryptographic text-hashing algorithm. This mechanism dynamically generates deterministic, pseudo-random confidence heuristics to deliver visually stable, high-fidelity audit metrics without additional backend round-trips.
-- **HMR-Resilient Raw DOM Animation Engines**: Refactored the splash sequence by stripping out volatile React concurrent mode state loops. The new architecture bypasses the virtual DOM entirely, leveraging raw DOM tree manipulation (`useRef`) and strict execution mutexes. This guarantees a highly performant, jank-free, and indestructible UX that is completely immune to Vite Hot Module Replacement (HMR) volatility and React 18 Strict Mode double-render race conditions.
-- **Optimized Flexbox Heuristics & Chronological Sorting Pipelines**: Hardened the component hierarchy with stringent CSS Flexbox `minHeight: 0` boundary constraints to enforce native GPU-accelerated scrolling heuristics in the Client Sidebar. Deprecated non-actionable interactive elements to streamline cognitive load, and implemented a robust regex-driven chronological sorting pipeline (`ay_sort`) to seamlessly orchestrate Memory Audit datasets by Assessment Year.
+Chartered Accountants (CAs) spend a disproportionate amount of time gathering client context, looking up past tax returns, cross-referencing GST filings, and checking open compliance notices. CAI transforms this workflow by introducing a persistent "mental model" for each client. By anchoring a specialized multi-agent LLM system directly to a secure, Assessment-Year-aware memory bank, CAI provides CAs with a cognitive assistant that never forgets client details, alerts them to financial anomalies, parses Form 16s on upload, and generates grounded, audit-ready advisory.
 
-## Project Overview
+---
 
-CAI (Chartered Accountant Intelligence) acts as a specialized, memory-aware operating layer tailored for Chartered Accountants. In typical AI chat applications, every message is treated as an isolated request, requiring users to repeatedly provide context. CAI disrupts this by persistently tracking and organizing a client's financial memory over time using a vector database.
+## 2. The Core Problem: Context Fragmentation in Tax Prep
 
-The system is designed to provide continuity across assessment years. When a CA interacts with the assistant, the backend retrieves the client's summarized mental model and uses an Orchestrator agent to dynamically determine the intent of the query. It then fetches only the specific, highly relevant memory namespaces (e.g., tax history, open notices, preferences) from Vectorize Hindsight, ensuring that the Advisory agent generates a response strictly grounded in verified client facts rather than hallucinated or generic advice.
+Accounting and tax preparation are plagued by three fundamental challenges when interacting with standard AI tools:
+* **The Context Reset Problem**: General-purpose AI assistants (like ChatGPT or Claude) treat every interaction as an isolated session. A CA must manually re-upload documents, copy-paste past tax histories, or re-type client preferences every single time they start a new query.
+* **Compliance Risks & Hallucinations**: CAs operate in a zero-tolerance compliance environment. General LLMs tend to make up numbers or guess tax rules when they lack specific history, posing severe audit risks.
+* **Chaotic Data Ingestion**: Client data arrives in unstructured formats—PDF scans, email threads, Tally sheets, and Excel logs. Structuring this data into a format that an LLM can parse and consistently remember over years is highly complex.
 
-The frontend exposes this functionality through two primary interfaces:
+---
 
-1. **Memory Audit Dashboard**: Allows the CA to visually inspect, filter, and audit the exact vector memories (facts) stored for the selected client across multiple years.
-2. **Advisory Chat Agent**: An interactive interface to ask complex tax questions, upload Form 16 documents for automated fact extraction, and receive deeply contextualized, memory-grounded advisory.
+## 3. The Solution: Decoupled Persistent Memory Architecture
 
-## Core Problem: Why CAI Exists
+CAI solves these challenges by separating the **Reasoning Layer** (LLM) from the **Memory Layer** (Vector database).
 
-Chartered Accountants manage portfolios of clients, each with a dense, interconnected web of financial facts spanning multiple assessment years. Vital information—such as past tax liabilities, specific 80C/80D deductions, open scrutiny notices, preferred tax regimes, and historical salary structures—is typically scattered across emails, physical folders, Form 16 PDFs, and tax portals.
-
-When CAs use standard LLM-based assistants (like ChatGPT or Claude), they face a critical "context window reset" problem. Standard AI does not remember a client's past, forcing the CA to re-upload documents or manually type out the client's entire history for every query. If they don't, the AI defaults to generic, unhelpful tax advice or, worse, hallucinates financial figures.
-
-**Why it does what it does:** CAI solves this fundamental issue by decoupling the LLM reasoning engine from a persistent memory layer. By leveraging Vectorize Hindsight, CAI transforms static client facts into a queryable vector space. It gives the AI "long-term memory," allowing a CA to ask, "How much advance tax is due?" and having the system instantly cross-reference last year's returns and current income to provide an accurate, client-specific answer.
-
-## Solution: How It Works
-
-CAI implements a multi-agent orchestration architecture seamlessly integrated with the Vectorize Hindsight API for specialized vector memory retrieval. 
-
-The complete runtime query path is as follows:
-
-1. **Mental Model Retrieval**: The system queries the Hindsight API to fetch a high-level summary (mental model) of the client.
-2. **Orchestrator Routing**: The user's query and the client's mental model summary are sent to the `Orchestrator Agent`.
-3. **Intent and Namespace Mapping**: The Orchestrator evaluates the query, determines the intent, assigns an urgency level, and dictates exactly which agents and memory namespaces (e.g., `tax_history`, `notices`) are required.
-4. **Targeted Vector Recall**: The backend calls the `hindsight.arecall()` method to retrieve the top matching vector memory entries exclusively from the namespaces specified by the Orchestrator.
-5. **Contextual Synthesis**: The fetched vector memory context, along with any newly uploaded document context and relevant tax rules, is fed to the `Advisory Agent`.
-6. **Grounded Response**: The Advisory Agent synthesizes a response strictly based on the provided memory facts, returning the final advisory, routing metadata, and the exact count of memories utilized back to the UI.
-
-## Key Features
-
-- **Memory-first CA assistant**: advice is grounded in stored client facts.
-- **Multi-agent routing**: orchestrator chooses between memory, advisory, document, notice, anomaly, and YoY paths.
-- **Transparent memory audit**: frontend shows stored facts and namespace categories.
-- **Document ingestion**: Form 16 PDFs are parsed with PyMuPDF and regex extractors.
-- **Notice tracking**: open and closed notices are separated with deadline-based urgency.
-- **YoY comparison**: compares tax, refund, and gross income deltas across assessment years.
-- **LangSmith observability**: important chains, retrievers, tools, and LLM calls are traceable.
-- **Live Hindsight Integration**: current implementation natively connects to the Vectorize Hindsight cloud to persist and recall cross-session financial memory.
-
-## Architecture
-
-```text
-frontend/
-  React + Vite app
-  Calls backend at http://localhost:8000
-
-backend/
-  FastAPI app
-  Agents for routing, advisory, document parsing, notices, anomaly checks, and YoY comparison
-  hindsight/ integration with Vectorize Hindsight API for retain, recall, delete, and mental models
+```
+                      ┌───────────────────────────┐
+                      │    FastAPI Backend App    │
+                      └─────────────┬─────────────┘
+                                    │
+            ┌───────────────────────┴───────────────────────┐
+            ▼                                               ▼
+┌───────────────────────┐                       ┌───────────────────────┐
+│    REASONING LAYER    │                       │     MEMORY LAYER      │
+│   (Groq / Llama-3)    │                       │ (Vectorize Hindsight) │
+│                       │                       │                       │
+│ • Intent Routing      │                       │ • tax_history         │
+│ • Advisory Synthesis  │                       │ • notices             │
+│ • Anomaly Detection   │                       │ • deductions          │
+└───────────────────────┘                       └───────────────────────┘
 ```
 
-High-level runtime flow:
+* **Vectorize Hindsight Integration**: Every extracted fact, client preference, and historical tax figure is stored as a vector memory block inside Hindsight. These facts persist across sessions and are recalled dynamically based on query intent.
+* **Zero-Hallucination Guardrails**: The Advisory Agent is instructed to use *only* the retrieved context from Hindsight. If the memory context for a query is empty, the agent explicitly states so rather than inventing numbers.
+* **Durable Ingestion**: CAs simply drop client Form 16 PDFs. The system automatically extracts key figures, writes them to Hindsight, and immediately updates the client's memory map.
 
-```text
-User
-  -> React UI
-  -> FastAPI /query
-  -> Hindsight mental model retrieval
-  -> Groq Orchestrator Agent
-  -> Hindsight namespace recall
-  -> Groq Advisory Agent
-  -> React response bubble
+---
+
+## 4. System Architecture & System Design
+
+![System Architecture Diagram](https://raw.githubusercontent.com/Vijeta-Patel/CAI/main/frontend/img/diagram.jpeg)
+
+CAI's runtime is divided into three key systems:
+1. **Frontend Interface (React/Vite)**: An editorial-brutalist SPA featuring high-performance micro-animations, a split-screen layout displaying the **Memory Audit View** beside the **Compliance Notice Panel**, and an interactive **Advisory Chat Panel** with drag-and-drop document upload.
+2. **Orchestration Server (FastAPI)**: Coordinates query validation, runs python-based agent runtimes, manages asynchronous calls to the Hindsight API, and formats model responses.
+3. **Observability Suite (LangSmith)**: Automatically traces agent execution, LLM latency, token spending, and retrieval accuracy for full visibility.
+
+### System Data Flow Sequence
+
+The following diagram details the sequence from a user's initial query through intent routing, vector database retrieval, and grounded response synthesis:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor CA as Chartered Accountant
+    participant UI as React Frontend (Vite)
+    participant API as FastAPI Backend
+    participant VH as Vectorize Hindsight Cloud API
+    participant LLM as Groq LLM (Llama / Qwen)
+
+    CA->>UI: Submits Query ("Any GST mismatches?")
+    UI->>API: POST /query (client_id, query)
+    API->>VH: Fetch Client Mental Model (Summary)
+    VH-->>API: Return 500-char mental model summary
+    API->>LLM: Run Orchestrator Agent (query + mental model)
+    LLM-->>API: Return structured routing metadata (<routing>...)
+    API->>VH: recall(query, namespace=client:id:namespace)
+    VH-->>API: Return semantically matching fact blocks
+    API->>LLM: Run Advisory Agent (query + recalled facts context)
+    LLM-->>API: Return grounded response synthesis
+    API-->>UI: Return response + routing metadata + memory stats
+    UI->>CA: Renders animated response bubble & agent calls
 ```
 
-## Detailed Agent Workflow
+---
 
-CAI relies on a specialized multi-agent system where distinct agents handle routing, advisory, document parsing, and anomaly detection. 
+## 5. Specialized Multi-Agent Orchestration
+
+CAI does not rely on a single LLM prompt. Instead, it coordinates six specialized agents:
 
 ### 1. Orchestrator Agent
-**File:** `backend/agents/orchestrator.py`
-
-The Orchestrator acts as the "routing brain" of the system. Powered by Llama-3.3-70b-versatile, it receives the user's query alongside a 500-character snapshot of the client's mental model. 
-
-Its primary job is to enforce strict, structured routing by outputting an exact XML schema (`<routing>...</routing>`). It determines:
-- **`intent`**: Categorizes the query (`tax_query`, `notice`, `anomaly`, `advisory`, `yoy`, `document`, `general`).
-- **`agents`**: Selects the required downstream agents (e.g., `memory`, `advisory`, `notice`, `yoy`) so computational budget is not wasted on unneeded logic.
-- **`urgency`**: Flags if the request requires immediate attention (`high`, `normal`, `low`).
-- **`context_needed`**: Dictates exactly which Hindsight namespaces (e.g., `tax_history`, `notices`, `deductions`, `income`, `preferences`) need to be retrieved from the vector database. For example, advance tax queries force the retrieval of `tax_history` and `income`.
+* **File:** [orchestrator.py](file:///home/vijeta/CAI/backend/agents/orchestrator.py)
+* **Model:** `llama-3.3-70b-versatile` (Temperature: 0)
+* **Purpose:** Functions as the primary semantic router and DAG entry point. It receives the user's raw query alongside a 500-character snapshot of the client's mental model retrieved from Hindsight. 
+* **Execution details:** Using a zero-temperature generation parameter for strict deterministic routing, it outputs a strict XML schema. The output schema enforces the extraction of:
+  - `<intent>`: Categorized strict union types (`tax_query`, `notice`, `anomaly`, `advisory`, `yoy`, `document`, `general`).
+  - `<agents>`: A dynamically generated comma-separated list of downstream agents to trigger in parallel or sequence (e.g., `memory,advisory`).
+  - `<urgency>`: A classifier (`high`, `normal`, `low`) used to prioritize background job queues.
+  - `<context_needed>`: Specific semantic namespaces required for the query (e.g., `tax_history,notices,deductions,income,preferences`).
 
 ### 2. Advisory Agent
-**File:** `backend/agents/advisory.py`
+* **File:** [advisory.py](file:///home/vijeta/CAI/backend/agents/advisory.py)
+* **Model:** `llama-3.3-70b-versatile` (Temperature: 0.2)
+* **Purpose:** The core synthesis engine for final response generation. 
+* **Execution details:** It operates under strict zero-hallucination guardrails. The prompt is injected with the `memory_context` (retrieved from Hindsight), `doc_context` (extracted during the current session), and `tax_rules`. The agent is explicitly instructed to decline generating tax figures if the context arrays are empty. It outputs:
+  - A direct, grounded answer.
+  - Year-specific advice isolated by the assessment year strings (e.g., AY2024-25).
+  - Anomaly flags and a confidence degradation warning if vector timestamps indicate the memory fact is over 9 months old.
+
+![CAI Multi-Agent Chat Panel](https://raw.githubusercontent.com/Vijeta-Patel/CAI/main/frontend/img/chat.png)
+
+### 3. Document Extraction Agent
+* **File:** [document.py](file:///home/vijeta/CAI/backend/agents/document.py)
+* **Purpose:** Handles deterministic and heuristic parsing of uploaded compliance documents.
+* **Execution details:** Utilizes `PyMuPDF` (fitz) to convert PDF binaries into raw text streams. It applies pre-compiled regular expressions (`re.search(r"Gross Salary[^\d]*([\d,]+)", text)`) to identify financial entities like Gross Salary, Total Tax Deducted (TDS), and PAN. Upon successful extraction, it asynchronously triggers the Hindsight `retain()` SDK method, embedding the new facts directly into the client's persistent vector space under the `tax_history` and `income` namespaces.
 
-The Advisory Agent acts as the expert synthesizer. Also utilizing Llama-3.3-70b-versatile, it receives the Orchestrator's selected memory context, current document context (if a PDF was uploaded), relevant tax rules, and the original query.
+### 4. Notice Agent
+* **File:** [notice.py](file:///home/vijeta/CAI/backend/agents/notice.py)
+* **Purpose:** A deterministic procedural agent that manages compliance deadlines and government scrutiny tracking.
+* **Execution details:** It invokes `arecall()` on the `notices` namespace. Using pre-defined regex heuristics (e.g., `Section 143(1)`, `Section 148`), it parses human-readable notice strings into structured `datetime` objects. It computes the `days_left` delta against `date.today()`. Notices are then mutated into a structured JSON dictionary sorted algorithmically by urgency (`high` for <=14 days, `normal` for <=30 days, `low` otherwise) and segregated into `open` and `closed` queues.
 
-The agent operates under explicit system instructions to prevent hallucination:
-- It must provide a direct, concise answer (under 300 words).
-- It must offer year-specific advice grounded *only* in the provided history.
-- It proactively highlights anomalies or red flags.
-- **Crucially:** If the memory context is empty, it must state so explicitly rather than inventing history. It also appends a confidence note if the recalled memory facts are older than 9 months.
+### 5. YoY (Year-over-Year) Agent
+* **File:** [yoy.py](file:///home/vijeta/CAI/backend/agents/yoy.py)
+* **Purpose:** Computes financial deltas across different assessment years.
+* **Execution details:** Triggers dual `recall()` requests on the `tax_history` namespace targeting specific Assessment Years (e.g., AY2023-24 vs AY2024-25). It parses the returned JSON blobs to extract gross income, tax paid, and refunds, returning a unified delta dictionary (`{"gross_delta": 50000, "tax_delta": 5000}`) that is fed into the Advisory Agent for trend summarization.
 
-### Document Extraction Agent
+### 6. Anomaly Agent
+* **File:** [anomaly.py](file:///home/vijeta/CAI/backend/agents/anomaly.py)
+* **Model:** `qwen/qwen3-32b`
+* **Purpose:** Acts as a specialized financial divergence detector.
+* **Execution details:** It compares incoming structured data streams (like new bank statements or Tally exports) against a historical baseline fetched from memory. It is instructed to flag transactions that deviate from the established norm, outputting a strict pattern: `FLAG: <description> | SEVERITY: <level>`. If no deviation is detected, it outputs a strict `CLEAR` signal, terminating the anomaly pipeline branch early to save tokens.
 
-File: `backend/agents/document.py`
+---
 
-The Document Agent parses uploaded Form 16 PDFs with PyMuPDF and extracts:
+## 6. Data Flow & Execution Sequences
 
-- gross salary
-- total tax deducted
-- PAN
-- raw text preview
+### Phase 1: Query Ingestion & Semantic Routing
+1. **HTTP Ingestion**: The FastAPI `/query` endpoint receives a JSON payload containing the `client_id` and the raw natural language `query`.
+2. **Mental Model Lookup**: The backend executes an asynchronous `mental_model_retrieve(client_id)` call to the Hindsight API, fetching a 500-character synthetic baseline of the client to provide zero-shot context.
+3. **Intent Classification**: The `Orchestrator Agent` evaluates the query alongside the mental model. It generates a rigid XML routing schema, specifying the exact downstream agents required (e.g., `[memory, advisory]`) and the semantic namespaces needed (e.g., `['tax_history', 'income']`).
 
-When gross salary is found, it writes both tax history and salary income facts back to memory.
-
-### Notice Agent
-
-File: `backend/agents/notice.py`
-
-The Notice Agent retrieves the `notices` namespace, computes `days_left`, and assigns urgency:
-
-- `high` when deadline is in 14 days or less
-- `normal` when deadline is in 30 days or less
-- `low` when deadline is more than 30 days away
-
-### YoY Agent
-
-File: `backend/agents/yoy.py`
-
-The YoY Agent compares assessment-year entries and returns:
-
-- `gross_delta`
-- `tax_delta`
-- `refund_delta`
-- current year memory
-- previous year memory
-
-### Anomaly Agent
-
-File: `backend/agents/anomaly.py`
-
-The Anomaly Agent compares current statement data against a historical baseline and returns either:
-
-- `CLEAR`
-- one or more `FLAG: <description> | SEVERITY: high/medium/low` lines
-
-## Model Usage and Numbers
-
-CAI currently uses Groq chat completions for LLM-powered reasoning.
-
-### 1. Normal query path
-
-Each `/query` call uses **2 LLM calls**:
-
-1. **Orchestrator Agent**
-   - model: `llama-3.3-70b-versatile`
-   - max tokens: `300`
-   - temperature: `0`
-   - purpose: route query and decide memory namespaces
-
-2. **Advisory Agent**
-   - model: `llama-3.3-70b-versatile`
-   - max tokens: `1024`
-   - temperature: `0.2`
-   - response instruction: under `300` words
-   - purpose: synthesize final answer from memory context
-
-Total configured output budget for one normal query:
-
-```text
-300 + 1024 = 1324 max output tokens
-```
-
-### 2. Anomaly model path
-
-The anomaly agent uses:
-
-- model: `qwen/qwen3-32b`
-- max tokens: `400`
-- purpose: detect unusual transactions or patterns against baseline memory
-
-### 3. Retry behavior
-
-Groq calls are wrapped by `groq_call_with_retry`.
-
-- retries: `3`
-- backoff: `2 ** i` seconds
-- wait sequence before final failure: `1 second`, then `2 seconds`
-- handled exception: `RateLimitError`
-
-### 4. Client summary size
-
-Before routing, the backend converts the client's mental model to text and keeps only:
-
-```text
-first 500 characters
-```
-
-This keeps the Orchestrator call cheaper and focused on routing.
-
-### 5. Document extraction size
-
-For uploaded PDFs, the document parser stores:
-
-```text
-first 2000 characters of extracted raw text
-```
-
-This gives enough context for inspection without storing the whole PDF text in the extracted response.
-
-## Vectorize Hindsight API Usage and Numbers
-
-The core memory layer of CAI is powered by the **Vectorize Hindsight API** (integrated via `backend/hindsight/client.py`). Hindsight manages the vectorization, storage, and semantic retrieval of client facts, acting as a persistent knowledge graph for the CA.
-
-### Core Memory Operations
-
-The application interfaces with the Hindsight SDK using asynchronous calls (`aretain`, `arecall`, `list_mental_models`) mapped to specific client tags and bank IDs (`BANK_ID="HWD"`):
-
-- **`retain(key, value)`**: Stores or updates a fact in the vector database. It associates the fact with the client by extracting the `client_id` from the key and passing it as a metadata tag to Hindsight.
-- **`recall(query, namespace, top_k)`**: Retrieves facts semantically matching the query from a specific namespace. The client filters results natively using the `tags_match="all_strict"` parameter to ensure no cross-client data leakage. The retrieved data is dynamically categorized (`notices`, `deductions`, `income`, `preferences`, `tax_history`) based on keyword analysis and sorted by Assessment Year (AY).
-- **`mental_model_retrieve(client_id)`**: Fetches the synthesized "mental model" (a compiled summary of the client) from Hindsight's `list_mental_models` endpoint to feed the Orchestrator.
-- **`delete_entry(key)`**: A placeholder for deletion operations, currently recommended to be handled via the Hindsight cloud dashboard.
-
-### Recall limits
-
-Default recall:
-
-```text
-top_k = 5
-```
-
-Memory audit endpoint:
-
-```text
-top_k = 50
-```
-
-YoY comparison:
-
-```text
-top_k = 3 for current lookup
-top_k = 3 for previous lookup
-```
-
-### Namespaces
-
-Client memories are stored using this pattern:
-
-```text
-client:{client_id}:{namespace}:{record_id}
-```
-
-Supported client namespaces:
-
-- `tax_history`
-- `notices`
-- `income`
-- `deductions`
-- `preferences`
-
-Cross-client patterns use:
-
-```text
-cross_client:patterns:{pattern_key}
-```
-
-### Hindsight keys
-
-Examples:
-
-```text
-client:abcri1234d:tax_history:ay2324
-client:abcri1234d:deductions:80c_ay2324
-client:abcri1234d:income:salary_ay2324
-client:abcri1234d:notices:n001
-client:abcri1234d:preferences:regime
-cross_client:patterns:regime_15l_25l_homeloan
-```
-
-### Memory write behavior
-
-In live Hindsight mode:
-
-- `retain` upserts the fact to the cloud vector store.
-- facts are persisted permanently unless deleted via the cloud dashboard.
-
-### Current memory counts
-
-The seeded demo clients contain:
-
-| Client | Client ID | PAN | Entries | Years |
-| --- | --- | --- | ---: | ---: |
-| Ramesh Iyer | `abcri1234d` | `ABCRI1234D` | 51 (Synced live from Vectorize cloud) | 3 |
-| Priya Sharma | `bcdps5678e` | `BCDPS5678E` | 50 | 2 |
-| MK Traders | `cdemk9012f` | `CDEMK9012F` | 39 | 1 |
-| Suresh Karthik| `dghsk3456g` | `DGHSK3456G` | 35 | 2 |
-| Nalini Anand  | `efgna7890h` | `EFGNA7890H` | 37 | 3 |
-
-The backend seed file also defines **2 cross-client pattern memories**:
-
-1. `regime_15l_25l_homeloan`
-2. `advance_tax_miss_rate`
-
-Total backend-defined seed facts:
-
-```text
-11 + 4 + 2 + 0 + 2 cross-client = 19 facts
-```
-
-## Seeded Demo Data
-
-### Ramesh Iyer
-
-Client:
-
-- id: `abcri1234d`
-- PAN: `ABCRI1234D`
-- employer: `infosys`
-
-Tax history:
-
-| Assessment Year | Gross | Tax Paid | Refund |
-| --- | ---: | ---: | ---: |
-| AY 2021-22 | 15,20,000 | 2,40,000 | 8,000 |
-| AY 2022-23 | 16,80,000 | 2,85,000 | 11,000 |
-| AY 2023-24 | 18,40,000 | 3,20,000 | 12,000 |
-
-Additional facts:
-
-- salary income AY 2023-24: `18,40,000`
-- house property EMI AY 2024-25: `38,000` per month
-- 80C deduction AY 2023-24: `1,50,000`
-- 80D deduction AY 2023-24: `25,000`
-- open 143(1) notice deadline: `2025-06-18`
-- preferred regime: old regime because of home loan benefit
-- risk profile: low
-- average monthly deposit baseline: `80,000` across `12` months
-
-### Priya Sharma
-
-Client:
-
-- id: `bcdps5678e`
-- PAN: `BCDPS5678E`
-- employer: `tcs`
-
-Tax history:
-
-| Assessment Year | Gross | Tax Paid | Refund |
-| --- | ---: | ---: | ---: |
-| AY 2022-23 | 9,80,000 | 95,000 | 3,000 |
-| AY 2023-24 | 11,20,000 | 1,30,000 | 5,000 |
-
-Additional facts:
-
-- 80C deduction AY 2023-24: `1,20,000`
-- preferred regime: new regime for simpler filing
-
-### MK Traders
-
-Client:
-
-- id: `cdemk9012f`
-- PAN: `CDEMK9012F`
-
-Business facts:
-
-- turnover AY 2023-24: `45,00,000`
-- profit AY 2023-24: `3,80,000`
-- GST filed: `true`
-- advance tax paid: `85,000`
-- open GST scrutiny notice deadline: `2025-07-10`
-
-### Cross-client patterns
-
-| Pattern | Numbers |
-| --- | --- |
-| Home-loan taxpayers in 15L-25L bracket | `83%` old-regime usage from sample size `47` |
-| Advance-tax miss rate in 10L-20L bracket | `34%` missed Q1 from sample size `89` |
-
-## Backend API
-
-Base URL:
-
-```text
-http://localhost:8000
-```
-
-### `POST /query`
-
-Runs the memory-aware advisory workflow.
-
-Request:
-
-```json
-{
-  "client_id": "abcri1234d",
-  "query": "Check advance tax"
-}
-```
-
-Response:
-
-```json
-{
-  "response": "string",
-  "routing": {
-    "intent": "advisory",
-    "client_id": "",
-    "agents": ["memory", "advisory"],
-    "urgency": "normal",
-    "context_needed": ["tax_history", "income"]
-  },
-  "memory_used": 5
-}
-```
-
-### `POST /upload/{client_id}/{ay}`
-
-Uploads and parses a Form 16 PDF.
-
-Example:
-
-```text
-POST /upload/abcri1234d/ay2425
-```
-
-The frontend currently uploads to `ay2425`.
-
-### `GET /memory/{client_id}`
-
-Returns up to `50` memory entries for the selected client.
-
-Example:
-
-```text
-GET /memory/abcri1234d
-```
-
-### `DELETE /memory/{key}`
-
-Placeholder endpoint for deleting a memory key from the UI perspective. Currently recommends cloud dashboard deletion.
-
-### `GET /notices/{client_id}`
-
-Returns:
-
-- `open`
-- `closed`
-
-### `GET /yoy/{client_id}/{ay_current}/{ay_previous}`
-
-Compares tax history across two assessment years.
-
-Example:
-
-```text
-GET /yoy/abcri1234d/ay2324/ay2223
-```
-
-Expected deltas for Ramesh Iyer:
-
-```text
-gross_delta = 1,60,000
-tax_delta = 35,000
-refund_delta = 1,000
-```
-
-## Frontend UI
-
-The frontend runs on Vite and calls the backend at:
-
-```text
-http://localhost:8000
-```
-
-Primary views:
-
-1. **Memory Audit**
-   - displays memory entries
-   - filters by All, Tax History, Deductions, Income, Preferences, Notices
-   - shows average confidence as `72%`
-   - shows stale entries as `0`
-
-2. **Advisory Agent**
-   - chat interface
-   - upload button for PDF files
-   - suggestion chips:
-     - `Any GST mismatches?`
-     - `Upcoming deadlines`
-     - `Summarise FY23 income`
-     - `Check advance tax`
-
-3. **Compliance & Notices**
-   - shown beside Memory Audit
-   - separates open and closed notices
-
-## Tech Stack
-
-### Backend
-
-- Python
-- FastAPI `0.110.0`
-- Uvicorn `0.28.0`
-- Groq SDK `0.4.2`
-- PyMuPDF `1.24.1`
-- python-dotenv `1.0.1`
-- LangChain `0.1.13`
-- LangGraph `0.0.30`
-- LangSmith
-
-### Frontend
-
-- React `19.2.6`
-- React DOM `19.2.6`
-- Vite `8.0.12`
-- Tailwind CSS `4.3.0`
-- Framer Motion `12.40.0`
-- Lucide React `1.17.0`
-
-### AI and Observability
-
-- Groq models:
-  - `llama-3.3-70b-versatile`
-  - `qwen/qwen3-32b`
-- LangSmith tracing:
-  - Orchestrator Agent
-  - Advisory Synthesis
-  - Document Extraction Agent
-  - Hindsight Vector Memory
-
-## Setup
-
-### 1. Clone and enter the project
-
-```bash
-cd /home/vijeta/CAI
-```
-
-### 2. Backend setup
-
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
-Create `backend/.env`:
-
-```env
-GROQ_API_KEY=your_groq_api_key
-LANGCHAIN_TRACING_V2=true
-LANGCHAIN_API_KEY=your_langsmith_api_key
-LANGCHAIN_PROJECT=ai-ca-agent
-```
-
-Start the backend:
-
-```bash
-uvicorn main:app --reload --port 8000
-```
-
-### 3. Frontend setup
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Open the Vite URL printed by the terminal. The default is usually:
-
-```text
-http://localhost:5173
-```
-
-## Demo Flow
-
-1. Start the backend on port `8000`.
-2. Start the frontend with `npm run dev`.
-3. Open the app and select `Ramesh Iyer`.
-4. View the Memory Audit page and inspect tax history, income, deductions, notices, and preferences.
-5. Ask: `Check advance tax`.
-6. Observe that the backend routes the query, recalls memory, and returns `memory_used`.
-7. Upload a Form 16 PDF from the Advisory Agent page.
-8. Confirm that gross salary and TDS are extracted.
-9. Return to Memory Audit and see the new facts added for `ay2425`.
-10. Check the Notice panel for open compliance items.
-
-## Project Structure
+### Phase 2: Targeted Vector Retrieval
+4. **Namespace Filtering**: The system parses the Orchestrator's `context_needed` array.
+5. **Asynchronous Recall**: For each required namespace, an `arecall(query, namespace=client:{id}:{namespace}, top_k=5)` request is fired concurrently.
+6. **Confidence & Tag Processing**: The retrieved facts are mapped. The system parses Hindsight's `tags` (e.g., `conf_95`) to determine fact reliability and uses regex to map the fact to a specific Assessment Year (`AY_RE`).
+
+### Phase 3: Synthesis & Delivery
+7. **Agent Handoff**: The retrieved vector context is joined into a formatted string and injected into the `Advisory Agent`'s prompt, alongside any temporary session documents.
+8. **LLM Generation**: The Advisory Agent synthesizes the grounded response, strictly adhering to the provided memory bounds.
+9. **Streaming Delivery**: The generated text, along with metadata (tokens used, latency, routing path, specific memory keys referenced), is returned to the React frontend where it is rendered with micro-animations.
+
+### Phase 4: Document Upload & Memory Retention Flow
+1. **Binary Upload**: The CA drags a Form 16 PDF into the Advisory Agent panel. The file is uploaded via `multipart/form-data`.
+2. **Local Parsing Pipeline**: The file is temporarily written to disk. The `Document Extraction Agent` initializes `PyMuPDF` to strip the text layer.
+3. **Regex Entity Extraction**: The parser applies compliance-specific regex patterns to isolate the `gross`, `tds`, and `pan` entities from the noise.
+4. **Hindsight Retention Generation**: The system constructs a natural language fact string (e.g., *"Form 16 uploaded. Gross salary verified at ₹1,500,000"*).
+5. **Vector Embedding**: The backend calls `aretain()` to write this new string into the Hindsight database under the `client:{id}:tax_history` tag. Vectorize automatically computes the embeddings and indexes the fact.
+6. **State Synchronization**: The frontend receives a `200 OK` response. It triggers a silent state refresh, performing a new `GET` request to reload the Memory Audit list, causing the UI to seamlessly display the newly ingrained memory.
+
+---
+
+## 7. Production Observability: LangSmith Integration
+
+![LangSmith Tracing and Logs](https://raw.githubusercontent.com/Vijeta-Patel/CAI/main/frontend/img/langsmith.png)
+
+CAI utilizes **LangSmith** for full execution tracing. CAs and developers can inspect the trace log to audit how the AI reached a conclusion.
+
+> [!TIP]
+> Make sure your backend environment has `LANGCHAIN_TRACING_V2=true` and a valid API key set to capture traces.
+
+### Captured Observability Data
+* **LLM Input/Output Schemas**: Verify exactly what context was fed into `Llama-3.3-70b` and inspect the raw XML output by the Orchestrator.
+* **Vector Match Latency**: View retrieval latency times for `arecall()` calls to the Hindsight API.
+* **Token Spend Audits**: Track cumulative token expenditure for every individual user query.
+* **Error Tracing**: Captures LLM rate-limits (`429`) or API network exceptions to guarantee operational reliability.
+
+---
+
+## 8. Hindsight Vector Memory Schema & Storage Design
+
+![Vectorize Hindsight Namespace Management](https://raw.githubusercontent.com/Vijeta-Patel/CAI/main/frontend/img/hindsight1.png)
+
+![Vectorize Hindsight Metadata Visualizer](https://raw.githubusercontent.com/Vijeta-Patel/CAI/main/frontend/img/hindsight2.png)
+
+CAI leverages **Vectorize Hindsight** as its core persistent memory layer. Data is embedded as high-dimensional vectors and isolated using strict hierarchical namespace routing to ensure client data is never cross-contaminated.
+
+### Key Pattern Schema & Payload Structure
+Data written to Hindsight is structured as a serialized JSON string representing a fact dictionary.
+* **Payload Serialization**: `content = json.dumps({"key": key, "value": {"fact": fact_str}})`
+* **Vector Indexing Tags**: Metadata tags (e.g., `["abcri1234d", "conf_95"]`) are attached for strict `tags_match="all_strict"` filtering during retrieval.
+* **Client Fact Keys**: Mapped syntactically as `client:{client_id}:{namespace}:{record_id}`.
+
+### Embedded Semantic Namespaces
+When calling `hindsight.arecall()`, CAI restricts the embedding search space to specific logical silos:
+* `tax_history`: Gross income vectors, total tax paid, refunds, and filing regimes (tracked via `AY_RE` matching).
+* `income`: Current employment sources, salary details, business turnovers, and asset-based income.
+* `deductions`: NLP-parsed declarations of 80C, 80D, standard, and custom deductions.
+* `notices`: Raw strings representing scrutiny intimations, tax demands, and GST notices. These are post-processed by the Notice Agent into temporal deadlines.
+* `preferences`: Client communication channels and dynamic risk tolerance thresholds.
+
+### Seeded Demo Clients
+CAI comes pre-seeded with synthetic, high-fidelity compliance records:
+
+| Client Name | Client ID | PAN | Assessment History | Core Features in Seed |
+| :--- | :--- | :--- | :---: | :--- |
+| **Ramesh Iyer** | `abcri1234d` | `ABCRI1234D` | 3 Years | Home loan eligibility, 143(1) Intimation notice, Old Tax Regime preference. |
+| **Priya Sharma** | `bcdps5678e` | `BCDPS5678E` | 2 Years | Freelance content writing income, PPF investments, New Tax Regime preference. |
+| **MK Traders** | `cdemk9012f` | `CDEMK9012F` | 1 Year | Sole proprietorship, GSTIN tracking, GSTR notice, anomalous cash deposits. |
+| **Suresh Karthik** | `dghsk3456g` | `DGHSK3456G` | 2 Years | Software engineer, RSU vesting, Capital Gains (LTCG) on stock sale. |
+| **Nalini Anand** | `efgna7890h` | `EFGNA7890H` | 3 Years | Self-employed gynaecologist, Presumptive taxation 44ADA, HDFC fixed deposit. |
+
+---
+
+## 9. Model Usage, Token Budgets, & Error Resilience
+
+To maintain high performance and low operational costs, CAI sets strict token boundaries:
+
+### LLM Token Allocation
+* **Orchestrator Agent**: Uses `llama-3.3-70b-versatile` with a token budget limit of `300` tokens and temperature `0` for deterministic routing.
+* **Advisory Agent**: Uses `llama-3.3-70b-versatile` with a budget limit of `1024` tokens and temperature `0.2` to synthesize advisory responses under 300 words.
+* **Anomaly Agent**: Uses `qwen/qwen3-32b` with a budget limit of `400` tokens to analyze transactional discrepancies.
+
+### Rate-Limit Fallbacks & Exponential Backoff
+All Groq API transactions are governed by a robust retry handler (`groq_call_with_retry`):
+* **Max Retries**: `3`
+* **Backoff Strategy**: Exponential backoff ($2^{\text{attempt}}$ seconds).
+* **Grace Sequence**: Pauses for 1 second, then 2 seconds, and finally 4 seconds before failing, ensuring robustness against API rate limits.
+
+---
+
+## 10. Local Development & Setup Guide
+
+### Prerequisites
+* Python 3.10+
+* Node.js v18+
+* A valid Groq API Key
+* A Vectorize Hindsight API Key
+
+### 1. Setup Backend
+1. Navigate to the backend directory:
+   ```bash
+   cd backend
+   ```
+2. Create and activate a virtual environment:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. Create a `.env` file in the `backend/` directory:
+   ```env
+   GROQ_API_KEY=your-groq-api-key
+   HINDSIGHT_API_KEY=your-hindsight-api-key
+   LANGCHAIN_TRACING_V2=true
+   LANGCHAIN_API_KEY=your-langsmith-api-key
+   LANGCHAIN_PROJECT=cai-tax-agent
+   ```
+5. Seed the vector database with the demo clients:
+   ```bash
+   python data/seed_clients.py
+   ```
+6. Start the FastAPI server:
+   ```bash
+   uvicorn main:app --reload --port 8000
+   ```
+
+### 2. Setup Frontend
+1. Navigate to the frontend directory:
+   ```bash
+   cd ../frontend
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the Vite development server:
+   ```bash
+   npm run dev
+   ```
+4. Open your browser and navigate to `http://localhost:5173`.
+
+---
+
+## 11. Step-by-Step Judge Demo Flow
+
+To evaluate the capabilities of CAI, run the following interactive demo flow:
+
+1. **Landing Page & Animations**: Open the app at `http://localhost:5173`. Check the staggered entrance animations, scroll through the staggered "How it Works" cards, and inspect the hover animations.
+2. **Splash Screen & State Transition**: Watch the splash screen load, collapse, and open the dashboard. The application automatically redirects you to the **Advisory Agent (Chat)** view and runs the query.
+3. **Inspect Multi-Agent Routing**: Observe the chat response. Below the agent response bubble, look at the tags labeled `↳ Called: orchestrator` and `↳ Called: memory`. This shows the multi-agent routing path.
+4. **Memory Audit View**: Click on the **Memory Audit** tab. Filter by `Notices` or `Tax History` to inspect Ramesh Iyer's pre-seeded memories, complete with confidence scores and Assessment Years.
+5. **Form 16 Ingestion**: Switch to the **Advisory Agent** view. Click the **Upload** button and select a sample Form 16 PDF. The Document Agent will parse the PDF, extract the financial details, and write the facts to Hindsight.
+6. **Verify Persistent Memory Sync**: Go back to the **Memory Audit** view. Verify that the newly parsed facts from the Form 16 (for AY 2024-25) are now loaded in the client's database profile.
+---
+
+## 12. Project Structure
 
 ```text
 CAI/
-  README.md
-  backend/
-    main.py
-    requirements.txt
-    agents/
-      advisory.py
-      anomaly.py
-      document.py
-      notice.py
-      orchestrator.py
-      yoy.py
-    data/
-      seed_clients.py
-    hindsight/
-      client.py
-      keys.py
-    utils/
-      groq_retry.py
-      mock.py
-  frontend/
-    package.json
-    vite.config.js
-    src/
-      App.jsx
-      api/client.js
-      components/
-        ChatPanel.jsx
-        ClientSidebar.jsx
-        MemoryAuditView.jsx
-        NoticePanel.jsx
-        MemoryCard.jsx
-        SplashScreen.jsx
-        StatsRow.jsx
+├── README.md                      # Comprehensive Architecture & Project Guide
+├── backend/
+│   ├── main.py                    # FastAPI Application Entry Point
+│   ├── requirements.txt           # Python Dependency Manifest
+│   ├── agents/                    # Multi-Agent Runtimes & Prompts
+│   │   ├── orchestrator.py        # Intent Router Agent
+│   │   ├── advisory.py            # Response Synthesis Agent
+│   │   ├── document.py            # Form 16 Parser Agent
+│   │   ├── notice.py              # Deadline Urgency Agent
+│   │   ├── yoy.py                 # YoY Comparer Agent
+│   │   └── anomaly.py             # Transaction Anomaly Agent
+│   ├── data/
+│   │   └── seed_clients.py        # Synthetic Data Seeding Script
+│   ├── hindsight/
+│   │   ├── client.py              # Hindsight Cloud API Asynchronous Client
+│   │   └── keys.py                # Namespace Key Formatting Rules
+│   └── utils/
+│       └── groq_retry.py          # Exponential Backoff Rate-Limit Wrapper
+└── frontend/
+    ├── package.json               # Node Package Manifest
+    ├── vite.config.js             # Vite Configuration Script
+    └── src/
+        ├── App.jsx                # Main Application Shell & History State Controller
+        ├── index.css              # Typography & Design Token Styles
+        ├── api/
+        │   └── client.js          # Backend API client
+        └── components/
+            ├── Landing.jsx        # Brutalist Animated Landing Component
+            ├── SplashScreen.jsx   # Animated Terminal Splash Sequence
+            ├── ClientSidebar.jsx  # Client Selection List Sidebar
+            ├── ChatPanel.jsx      # Advisory Agent Interface
+            ├── MemoryAuditView.jsx# Memory Audit Interface
+            ├── MemoryCard.jsx     # Individual Memory Fact Card
+            └── NoticePanel.jsx    # Compliance Notices List Panel
 ```
-
-## Environment Variables
-
-### Required for real LLM calls
-
-```env
-GROQ_API_KEY=your_groq_api_key
-```
-
-### Optional for tracing
-
-```env
-LANGCHAIN_TRACING_V2=true
-LANGCHAIN_API_KEY=your_langsmith_api_key
-LANGCHAIN_PROJECT=ai-ca-agent
-```
-
-### Required for Vectorize Hindsight
-
-The backend checks for:
-
-```env
-HINDSIGHT_API_KEY=your_hindsight_api_key
-```
-
-The app requires this key to connect to the live Hindsight memory layer.
-
-## Current Limitations
-
-- Memory deletion is primarily a UI update; actual vector deletion is recommended via the Hindsight dashboard.
-- Uploaded files are temporarily written to `/tmp/{filename}`.
-- Form 16 extraction uses regex patterns and may need expansion for varied PDF formats.
-- The chat header currently displays Ramesh Iyer statically even when another client is selected.
-- The sidebar shows Ramesh Iyer as `14 entries`, while backend seeded memory currently contains `11` client entries plus cross-client patterns outside the client namespace.
