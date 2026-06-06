@@ -1,4 +1,4 @@
-import os, json, asyncio
+import os, json, asyncio, re
 import sys
 
 # Add backend directory to path if not present
@@ -53,29 +53,45 @@ async def recall(query: str, namespace: str = "", top_k: int = 5) -> list[dict]:
         results = await hindsight.arecall(**kwargs)
         parsed_results = []
         
+        # AY regex: matches AY2022-23, AY2023-24, AY2024-25 etc.
+        _AY_RE = re.compile(r"AY\s*(\d{4}-\d{2,4})", re.IGNORECASE)
+        # Map AY string to a sortable integer (e.g. "2024-25" → 202425)
+        def _ay_sort_key(ay_str: str) -> int:
+            if not ay_str:
+                return 0
+            digits = re.sub(r"[^\d]", "", ay_str)
+            return int(digits) if digits else 0
+
         items = getattr(results, "items", results)
         if hasattr(items, '__iter__'):
             for i, r in enumerate(items):
                 text_val = getattr(r, "text", getattr(r, "content", str(r)))
                 
-                # We attempt to create a fake key so the frontend UI tabs can still categorize them loosely
+                # Categorise by content keywords
                 fake_key_type = "fact"
                 text_lower = text_val.lower()
-                if "tax" in text_lower or "gross" in text_lower or "refund" in text_lower:
-                    fake_key_type = "tax_history"
-                elif "deduction" in text_lower or "80c" in text_lower or "80d" in text_lower:
-                    fake_key_type = "deductions"
-                elif "income" in text_lower or "salary" in text_lower:
-                    fake_key_type = "income"
-                elif "regime" in text_lower or "risk" in text_lower:
-                    fake_key_type = "preferences"
-                elif "notice" in text_lower or "deadline" in text_lower:
+                if "notice" in text_lower or "deadline" in text_lower or "scrutiny" in text_lower or "mismatch" in text_lower:
                     fake_key_type = "notices"
-                
-                # Provide the format the frontend MemoryAuditView strictly expects
+                elif "deduction" in text_lower or "80c" in text_lower or "80d" in text_lower or "ppf" in text_lower or "nps" in text_lower or "hra" in text_lower:
+                    fake_key_type = "deductions"
+                elif "income" in text_lower or "salary" in text_lower or "freelance" in text_lower or "rental" in text_lower or "capital gain" in text_lower:
+                    fake_key_type = "income"
+                elif "prefer" in text_lower or "regime" in text_lower or "risk" in text_lower or "whatsapp" in text_lower or "email" in text_lower:
+                    fake_key_type = "preferences"
+                elif "tax" in text_lower or "gross" in text_lower or "refund" in text_lower or "advance tax" in text_lower:
+                    fake_key_type = "tax_history"
+
+                # Extract the most recent AY mentioned in this fact
+                ay_matches = _AY_RE.findall(text_val)
+                ay_label = ay_matches[-1] if ay_matches else ""
+                ay_sort  = _ay_sort_key(ay_label)
+
                 parsed_results.append({
                     "key": f"{namespace}:{fake_key_type}:{i}",
-                    "value": {"fact": text_val}
+                    "value": {"fact": text_val},
+                    "ay": ay_label,
+                    "ay_sort": ay_sort,
+                    "order": i
                 })
         
         print(f"DEBUG: parsed_results length: {len(parsed_results)}")

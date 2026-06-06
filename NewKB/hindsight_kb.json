@@ -1,0 +1,339 @@
+{
+  "clients": [
+    {
+      "id": "ABCRI1234D",
+      "name": "Ramesh Iyer",
+      "history_years": 3,
+      "facts": [
+        {
+          "namespace": "tax_history",
+          "fact": "Client ABCRI1234D had a gross salary income of 1,840,000 from Infosys Ltd, paid 212,000 in advance tax and 18,500 in TDS, and received a refund of 4,200 for tax year 2022-2023. Involving: client ABCRI1234D",
+          "confidence": 95
+        },
+        {
+          "namespace": "tax_history",
+          "fact": "Client ABCRI1234D filed under the Old Tax Regime for tax year 2022-2023 and explicitly requested the same regime be applied for tax year 2023-2024. Involving: client ABCRI1234D",
+          "confidence": 92
+        },
+        {
+          "namespace": "tax_history",
+          "fact": "Client ABCRI1234D had a gross salary income of 1,620,000 from Infosys Ltd and paid total tax of 188,000 for tax year 2021-2022. Involving: client ABCRI1234D",
+          "confidence": 90
+        },
+        {
+          "namespace": "tax_history",
+          "fact": "Client ABCRI1234D received a salary increment of 18 percent effective April 2024, bringing estimated gross income to approximately 2,170,000 for tax year 2024-2025. Involving: client ABCRI1234D",
+          "confidence": 76
+        },
+        {
+          "namespace": "deductions",
+          "fact": "Client ABCRI1234D invested 150,000 in SBI Life Insurance premium for AY2023-24, fully exhausting the 80C deduction limit. Involving: client ABCRI1234D",
+          "confidence": 93
+        },
+        {
+          "namespace": "deductions",
+          "fact": "Client ABCRI1234D claimed HRA exemption of 184,000 for tax year 2022-2023 based on a rent agreement of 18,000 per month. Landlord PAN BRTPR5678K was submitted on record. Involving: client ABCRI1234D",
+          "confidence": 88
+        },
+        {
+          "namespace": "deductions",
+          "fact": "Client ABCRI1234D paid 22,000 as health insurance premium covering self and family under Section 80D for AY2023-24. Involving: client ABCRI1234D",
+          "confidence": 88
+        },
+        {
+          "namespace": "deductions",
+          "fact": "Client ABCRI1234D has not invested in ELSS mutual funds in either AY2022-23 or AY2023-24. CA noted client is open to ELSS if 80C limit is not otherwise met. Involving: client ABCRI1234D",
+          "confidence": 80
+        },
+        {
+          "namespace": "income",
+          "fact": "Client ABCRI1234D purchased a residential flat in Whitefield, Bengaluru in March 2025 with a home loan of 4,500,000. Monthly EMI is 38,000. This creates eligibility for Section 24 interest deduction up to 200,000 per year. Involving: client ABCRI1234D",
+          "confidence": 74
+        },
+        {
+          "namespace": "income",
+          "fact": "Client ABCRI1234D earns approximately 14,000 annually in fixed deposit interest from SBI. TDS at 10 percent is deducted at source. Involving: client ABCRI1234D",
+          "confidence": 82
+        },
+        {
+          "namespace": "notices",
+          "fact": "Client ABCRI1234D received a scrutiny notice for AY2022-23 bearing notice number CP/2024/12345 on 14 March 2024. A reply was filed on 2 April 2024. The notice was closed with no further action by the IT department. Involving: client ABCRI1234D",
+          "confidence": 99
+        },
+        {
+          "namespace": "notices",
+          "fact": "Client ABCRI1234D received a 26AS mismatch notice for AY2024-25 citing a discrepancy of 8,200. Notice was received on 24 May 2025. Reply deadline is 18 June 2025. Status is open and pending CA action. Involving: client ABCRI1234D",
+          "confidence": 95
+        },
+        {
+          "namespace": "preferences",
+          "fact": "Client ABCRI1234D prefers to receive tax summaries and updates via WhatsApp rather than email. He responds fastest on weekday evenings between 7 PM and 9 PM. Involving: client ABCRI1234D",
+          "confidence": 78
+        },
+        {
+          "namespace": "preferences",
+          "fact": "Client ABCRI1234D has a conservative financial profile. He avoids aggressive or speculative tax saving instruments such as ULIPs and market-linked debentures. Involving: client ABCRI1234D",
+          "confidence": 72
+        },
+        {
+          "namespace": "tax_history",
+          "fact": "Cross-client pattern: 83 percent of clients in the 1,500,000 to 2,500,000 salary bracket who have active home loans benefit from the Old Tax Regime over the New Tax Regime. Client ABCRI1234D fits this profile and should be evaluated accordingly for AY2024-25. Involving: client ABCRI1234D",
+          "confidence": 85
+        }
+      ]
+    },
+    {
+      "id": "BCDPS5678E",
+      "name": "Priya Sharma",
+      "history_years": 2,
+      "facts": [
+        {
+          "namespace": "tax_history",
+          "fact": "Client BCDPS5678E had a gross salary income of 1,280,000 from Wipro Technologies and paid total tax of 98,000 under the New Tax Regime for tax year 2022-2023. Involving: client BCDPS5678E",
+          "confidence": 92
+        },
+        {
+          "namespace": "tax_history",
+          "fact": "Client BCDPS5678E received a tax refund of 6,800 for AY2022-23 directly credited to her SBI savings account. Involving: client BCDPS5678E",
+          "confidence": 95
+        },
+        {
+          "namespace": "tax_history",
+          "fact": "Client BCDPS5678E had a gross salary income of 1,480,000 from Wipro Technologies for tax year 2023-2024. Form 16 is pending from employer as of June 2025. Involving: client BCDPS5678E",
+          "confidence": 78
+        },
+        {
+          "namespace": "tax_history",
+          "fact": "Cross-client pattern: New Tax Regime saves approximately 14,000 in tax versus Old Tax Regime for clients in the 1,200,000 to 1,600,000 salary bracket with no major deductions. Client BCDPS5678E has been on New Tax Regime and this remains optimal. Involving: client BCDPS5678E",
+          "confidence": 87
+        },
+        {
+          "namespace": "deductions",
+          "fact": "Client BCDPS5678E contributed 50,000 to PPF in AY2022-23. The 80C deduction limit of 150,000 was only partially utilized, leaving 100,000 of potential deduction unused. Involving: client BCDPS5678E",
+          "confidence": 85
+        },
+        {
+          "namespace": "deductions",
+          "fact": "Client BCDPS5678E is under the New Tax Regime for AY2023-24 and therefore deduction tracking under 80C and 80D is not applicable for this assessment year. Involving: client BCDPS5678E",
+          "confidence": 90
+        },
+        {
+          "namespace": "income",
+          "fact": "Client BCDPS5678E earns supplementary income from freelance content writing estimated at 120,000 per year. This income has been declared under other sources. GST registration has not been obtained as turnover is below the threshold. Involving: client BCDPS5678E",
+          "confidence": 71
+        },
+        {
+          "namespace": "income",
+          "fact": "Client BCDPS5678E does not have rental income. She resides in company-provided accommodation in Bengaluru. HRA is not applicable. Involving: client BCDPS5678E",
+          "confidence": 88
+        },
+        {
+          "namespace": "notices",
+          "fact": "Client BCDPS5678E has no pending IT notices for AY2022-23 or AY2023-24. All filings are clean with no outstanding demands. Involving: client BCDPS5678E",
+          "confidence": 92
+        },
+        {
+          "namespace": "preferences",
+          "fact": "Client BCDPS5678E prefers all communication via email. She is highly responsive and typically replies within 24 hours. CA should send deadline reminders at least 7 days in advance. Involving: client BCDPS5678E",
+          "confidence": 85
+        },
+        {
+          "namespace": "preferences",
+          "fact": "Client BCDPS5678E is open to switching to Old Tax Regime in future years if home loan or major deductions justify it. CA to re-evaluate annually. Involving: client BCDPS5678E",
+          "confidence": 75
+        },
+        {
+          "namespace": "tax_history",
+          "fact": "Client BCDPS5678E ITR filing for AY2024-25 is due by 31 July 2025. Form 16 from Wipro Technologies is still awaited as of 5 June 2025. Involving: client BCDPS5678E",
+          "confidence": 88
+        },
+        {
+          "namespace": "income",
+          "fact": "Client BCDPS5678E has no capital gains income from stocks or mutual funds in AY2022-23 or AY2023-24. She holds no equity portfolio as of last interaction. Involving: client BCDPS5678E",
+          "confidence": 80
+        },
+        {
+          "namespace": "deductions",
+          "fact": "Client BCDPS5678E paid 8,500 as health insurance premium for self only under Section 80D in AY2022-23 under Old Tax Regime. Deduction not applicable under New Tax Regime chosen subsequently. Involving: client BCDPS5678E",
+          "confidence": 82
+        },
+        {
+          "namespace": "preferences",
+          "fact": "Client BCDPS5678E mentioned interest in starting a SIP of 5,000 per month in ELSS mutual funds during the last interaction in March 2025. CA to follow up during AY2024-25 filing. Involving: client BCDPS5678E",
+          "confidence": 70
+        }
+      ]
+    },
+    {
+      "id": "CDEMK9012F",
+      "name": "MK Traders",
+      "history_years": 1,
+      "facts": [
+        {
+          "namespace": "tax_history",
+          "fact": "Client CDEMK9012F is a sole proprietorship trading firm with gross turnover of 8,200,000 for FY2023-24. Presumptive taxation under Section 44AD is applicable as turnover is below 20,000,000. Involving: client CDEMK9012F",
+          "confidence": 90
+        },
+        {
+          "namespace": "tax_history",
+          "fact": "Client CDEMK9012F paid advance tax of 40,000 for Q1 of AY2024-25. Q2 advance tax estimate is pending recalculation based on revised turnover projection of 9,500,000 for FY2024-25. Involving: client CDEMK9012F",
+          "confidence": 65
+        },
+        {
+          "namespace": "income",
+          "fact": "Client CDEMK9012F is registered under GST with GSTIN 29CDEMK9012F1Z4. The firm files GSTR-1 quarterly and GSTR-3B monthly. Business category is wholesale trading of electrical components. Involving: client CDEMK9012F",
+          "confidence": 95
+        },
+        {
+          "namespace": "income",
+          "fact": "Client CDEMK9012F had an anomalous cash deposit of 420,000 in June 2025, which is significantly higher than the average monthly cash deposit of 80,000 over the past 12 months. This has been flagged for explanation before ITR filing. Involving: client CDEMK9012F",
+          "confidence": 95
+        },
+        {
+          "namespace": "deductions",
+          "fact": "Client CDEMK9012F declared business expenses of 1,400,000 in staff salaries, 240,000 in rent for business premises, and 80,000 in travel expenses for FY2023-24. Depreciation schedule has not yet been submitted. Involving: client CDEMK9012F",
+          "confidence": 68
+        },
+        {
+          "namespace": "notices",
+          "fact": "Client CDEMK9012F received a GST notice in May 2025 citing an ITC mismatch of 32,000 between GSTR-2B and the purchase register for Q4 FY2023-24. Reply deadline is 30 June 2025. Status is open. Involving: client CDEMK9012F",
+          "confidence": 92
+        },
+        {
+          "namespace": "notices",
+          "fact": "Client CDEMK9012F cash deposit of 420,000 in June 2025 has been internally flagged by the anomaly detection agent as requiring a written explanation from the client before ITR submission. Involving: client CDEMK9012F",
+          "confidence": 93
+        },
+        {
+          "namespace": "preferences",
+          "fact": "Client CDEMK9012F owner Mahesh K prefers communication via phone calls for all major updates. The firm's accountant Sundar handles document submissions and email correspondence. Involving: client CDEMK9012F",
+          "confidence": 82
+        },
+        {
+          "namespace": "tax_history",
+          "fact": "Client CDEMK9012F has no prior IT notices or scrutiny history before FY2023-24. This is the first year the firm has had a compliance issue. Involving: client CDEMK9012F",
+          "confidence": 88
+        },
+        {
+          "namespace": "income",
+          "fact": "Client CDEMK9012F average monthly GST liability is approximately 45,000 based on GSTR-3B filings over the past 10 months. Any month exceeding 70,000 should be flagged for review. Involving: client CDEMK9012F",
+          "confidence": 80
+        }
+      ]
+    },
+    {
+      "id": "DGHSK3456G",
+      "name": "Suresh Karthik",
+      "history_years": 2,
+      "facts": [
+        {
+          "namespace": "tax_history",
+          "fact": "Client DGHSK3456G is a senior software engineer at TCS with gross salary of 2,450,000 for AY2023-24. Total tax paid was 342,000 under the Old Tax Regime. Involving: client DGHSK3456G",
+          "confidence": 93
+        },
+        {
+          "namespace": "tax_history",
+          "fact": "Client DGHSK3456G switched from Old Tax Regime to New Tax Regime for AY2024-25 after CA analysis showed a savings of 28,000. This decision is documented and confirmed. Involving: client DGHSK3456G",
+          "confidence": 96
+        },
+        {
+          "namespace": "deductions",
+          "fact": "Client DGHSK3456G had 150,000 invested in PPF and 50,000 in NPS under Section 80CCD(1B) for AY2023-24 under Old Tax Regime. These deductions are not carried forward under New Tax Regime for AY2024-25. Involving: client DGHSK3456G",
+          "confidence": 91
+        },
+        {
+          "namespace": "income",
+          "fact": "Client DGHSK3456G sold 500 shares of Infosys in December 2024 at a gain of 185,000. This qualifies as Long Term Capital Gain and is taxable at 10 percent above the 100,000 exemption threshold. Tax liability on LTCG is approximately 8,500. Involving: client DGHSK3456G",
+          "confidence": 88
+        },
+        {
+          "namespace": "income",
+          "fact": "Client DGHSK3456G has a rental income of 180,000 per year from a flat in Chennai. Standard deduction of 30 percent applies. Net taxable rental income is 126,000. Involving: client DGHSK3456G",
+          "confidence": 90
+        },
+        {
+          "namespace": "notices",
+          "fact": "Client DGHSK3456G received an intimation under Section 143(1) for AY2022-23 with a demand of 12,400 due to a TDS credit mismatch. Demand was paid on 15 January 2024. Case is closed. Involving: client DGHSK3456G",
+          "confidence": 97
+        },
+        {
+          "namespace": "preferences",
+          "fact": "Client DGHSK3456G prefers a detailed annual tax planning session every March before the financial year ends. He is financially literate and prefers detailed explanations over simplified summaries. Involving: client DGHSK3456G",
+          "confidence": 84
+        },
+        {
+          "namespace": "preferences",
+          "fact": "Client DGHSK3456G is interested in NPS as a retirement planning vehicle. CA to advise on 80CCD(1B) benefit under Old Regime if client switches back in future. Involving: client DGHSK3456G",
+          "confidence": 76
+        },
+        {
+          "namespace": "income",
+          "fact": "Client DGHSK3456G receives annual RSU vesting from TCS worth approximately 320,000 per year. This is taxed as perquisite income and reflected in Form 16. Involving: client DGHSK3456G",
+          "confidence": 85
+        },
+        {
+          "namespace": "tax_history",
+          "fact": "Cross-client pattern: clients with LTCG above 100,000 and rental income often benefit from advance tax planning in Q3 to avoid interest under Section 234B. Client DGHSK3456G should be reminded by September 2025. Involving: client DGHSK3456G",
+          "confidence": 82
+        }
+      ]
+    },
+    {
+      "id": "EFGNA7890H",
+      "name": "Nalini Anand",
+      "history_years": 3,
+      "facts": [
+        {
+          "namespace": "tax_history",
+          "fact": "Client EFGNA7890H is a self-employed gynaecologist running a private clinic in Pune. Gross professional receipts were 4,800,000 for FY2023-24. Presumptive taxation under Section 44ADA is applicable as receipts are below 5,000,000. Involving: client EFGNA7890H",
+          "confidence": 91
+        },
+        {
+          "namespace": "tax_history",
+          "fact": "Client EFGNA7890H total tax paid for AY2023-24 was 980,000 inclusive of advance tax installments. A refund of 18,000 is pending for AY2022-23. Involving: client EFGNA7890H",
+          "confidence": 88
+        },
+        {
+          "namespace": "deductions",
+          "fact": "Client EFGNA7890H invested 150,000 in PPF, 50,000 in NPS under 80CCD(1B), and paid 25,000 in health insurance for self and family under 80D for AY2023-24. Total deductions claimed were 225,000. Involving: client EFGNA7890H",
+          "confidence": 92
+        },
+        {
+          "namespace": "income",
+          "fact": "Client EFGNA7890H owns medical equipment worth 2,200,000 purchased in FY2022-23. Depreciation at 15 percent per annum is applicable. Net book value as of FY2023-24 is 1,870,000. Involving: client EFGNA7890H",
+          "confidence": 85
+        },
+        {
+          "namespace": "income",
+          "fact": "Client EFGNA7890H earns 240,000 per year from visiting consultant fees at two private hospitals in Pune. This is declared under professional income. Involving: client EFGNA7890H",
+          "confidence": 87
+        },
+        {
+          "namespace": "notices",
+          "fact": "Client EFGNA7890H received a Section 148 notice for AY2020-21 alleging undisclosed income. The notice was successfully contested and dropped in February 2024 after submission of complete bank statements and appointment records. Involving: client EFGNA7890H",
+          "confidence": 98
+        },
+        {
+          "namespace": "notices",
+          "fact": "Client EFGNA7890H has no pending notices as of June 2025. CA has ensured all advance tax payments are on schedule to avoid 234B interest. Involving: client EFGNA7890H",
+          "confidence": 90
+        },
+        {
+          "namespace": "preferences",
+          "fact": "Client EFGNA7890H is extremely time-constrained due to clinical work. All document collection must be done via WhatsApp and completed within a 3-day window. She should not be asked for in-person meetings unless absolutely necessary. Involving: client EFGNA7890H",
+          "confidence": 88
+        },
+        {
+          "namespace": "preferences",
+          "fact": "Client EFGNA7890H wants to gradually move from presumptive taxation to regular books of accounts in FY2025-26 as receipts are expected to cross 5,000,000. CA to prepare for audit requirement under Section 44AB. Involving: client EFGNA7890H",
+          "confidence": 79
+        },
+        {
+          "namespace": "income",
+          "fact": "Client EFGNA7890H has a fixed deposit of 1,500,000 in HDFC Bank yielding interest of approximately 112,500 per year at 7.5 percent. TDS is deducted. Form 26AS should be cross-checked each year. Involving: client EFGNA7890H",
+          "confidence": 86
+        }
+      ]
+    }
+  ]
+}

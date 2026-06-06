@@ -1,26 +1,76 @@
-# Node
+# ─── Node / Frontend ──────────────────────────────────────────────────────────
 node_modules/
 dist/
 build/
+.vite/
+.next/
+*.local
 
-# Python
+# ─── Python / Backend ─────────────────────────────────────────────────────────
 __pycache__/
-*.pyc
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+*.egg
 venv/
 env/
+.venv/
+.Python
+*.so
+
+# ─── Environment & Secrets ────────────────────────────────────────────────────
 .env
-.pytest_cache/
+.env.*
+!.env.example
 
-# OS
-.DS_Store
-
-# Temporary & AI generated
-/tmp/
-*.log
+# ─── Testing & Debug ──────────────────────────────────────────────────────────
 test_*.py
+*_test.py
+*.test.js
+*.spec.js
+*.test.ts
+*.spec.ts
+.pytest_cache/
+coverage/
+htmlcov/
+.coverage
+*.cover
+pytest.ini
+jest.config.*
+
+# ─── Demo & Seed Data ─────────────────────────────────────────────────────────
+demo_docs/
+NewKB/test_queries.md
+backend/data/generate_demo_pdfs.py
+backend/data/seed_clients.py
+
+# ─── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+*.log.*
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ─── OS & Editor ──────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
 .cursor/
 .cursorrules
 .gemini/
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ─── Temporary ────────────────────────────────────────────────────────────────
+/tmp/
+*.tmp
+*.bak
+*.orig
+
+# ─── Docs (keep only READMEs) ─────────────────────────────────────────────────
 *.md
 !README.md
 !frontend/README.md
